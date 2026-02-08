@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -47,9 +48,14 @@ jobs:
         working-directory: android
         run: ./gradlew assembleRelease
 
-      - name: Get version from tag
+      - name: Get version
         id: version
-        run: echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=manual-$(date +'%Y%m%d-%H%M%S')" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
