@@ -5,7 +5,8 @@
     "no-console": "warn",
     "no-unused-vars": "warn",
     "no-debugger": "error",
-    "eqeqeq": "error"
+    "eqeqeq": "error",
+    "typescript/no-explicit-any": "error"
   },
   "ignorePatterns": ["node_modules/", "dist/", ".expo/", "*.config.js", "scripts/"]
 }
