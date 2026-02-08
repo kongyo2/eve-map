@@ -9,7 +9,8 @@
     "web": "expo start --web",
     "lint": "oxlint",
     "format": "prettier --write \"src/**/*.{ts,tsx}\" \"app/**/*.{ts,tsx}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"app/**/*.{ts,tsx}\""
+    "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"app/**/*.{ts,tsx}\"",
+    "generate-data": "node scripts/generate-universe-data.mjs"
   },
   "dependencies": {
     "@shopify/react-native-skia": "2.2.12",
@@ -34,6 +35,7 @@
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
+    "adm-zip": "^0.5.16",
     "oxlint": "^1.43.0",
     "prettier": "^3.8.1",
     "typescript": "~5.9.2"

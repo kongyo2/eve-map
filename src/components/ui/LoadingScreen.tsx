@@ -14,16 +14,8 @@ type Props = {
 
 const phaseLabel = (phase: string): string => {
   switch (phase) {
-    case 'cache':
-      return STRINGS.loadingFromCache;
-    case 'regions':
-      return STRINGS.loadingRegions;
-    case 'constellations':
-      return STRINGS.loadingConstellations;
-    case 'systems':
-      return STRINGS.loadingSystems;
-    case 'connections':
-      return STRINGS.loadingConnections;
+    case 'loading':
+      return STRINGS.loadingTitle;
     default:
       return STRINGS.loadingTitle;
   }

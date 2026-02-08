@@ -7,5 +7,5 @@
     "no-debugger": "error",
     "eqeqeq": "error"
   },
-  "ignorePatterns": ["node_modules/", "dist/", ".expo/", "*.config.js"]
+  "ignorePatterns": ["node_modules/", "dist/", ".expo/", "*.config.js", "scripts/"]
 }
