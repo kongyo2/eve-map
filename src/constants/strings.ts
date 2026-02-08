@@ -73,6 +73,17 @@ export const STRINGS = {
   close: '閉じる',
   retry: '再試行',
 
+  // Route short labels (search)
+  routeFromShort: '出発',
+  routeToShort: '目的',
+
+  // Gesture hints
+  gestureHintTitle: '操作ガイド',
+  gestureHintTap: 'タップ: システムを選択',
+  gestureHintPinch: 'ピンチ: 拡大・縮小',
+  gestureHintDrag: 'ドラッグ: マップ移動',
+  gestureHintDismiss: 'タップして閉じる',
+
   // Errors
   networkError: 'ネットワークエラーが発生しました',
   loadError: 'データの読み込みに失敗しました',

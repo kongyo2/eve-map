@@ -8,6 +8,7 @@ type Props = {
   systemCount: number;
   onZoomIn: () => void;
   onZoomOut: () => void;
+  onReset: () => void;
   onSearch: () => void;
 };
 
@@ -22,14 +23,21 @@ const detailLevelLabel = (level: DetailLevel): string => {
   }
 };
 
-export const MapControls = ({ detailLevel, systemCount, onZoomIn, onZoomOut, onSearch }: Props) => {
+export const MapControls = ({
+  detailLevel,
+  systemCount,
+  onZoomIn,
+  onZoomOut,
+  onReset,
+  onSearch,
+}: Props) => {
   return (
     <>
       {/* Top-left info badge */}
       <View style={styles.infoBadge}>
         <Text style={styles.infoLabel}>{detailLevelLabel(detailLevel)}</Text>
         <View style={styles.infoDivider} />
-        <Text style={styles.infoCount}>{systemCount.toLocaleString()} systems</Text>
+        <Text style={styles.infoCount}>{systemCount.toLocaleString()} システム</Text>
       </View>
 
       {/* Top-right zoom controls */}
@@ -42,6 +50,11 @@ export const MapControls = ({ detailLevel, systemCount, onZoomIn, onZoomOut, onS
           <Text style={styles.zoomText}>-</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Reset view button */}
+      <TouchableOpacity style={styles.resetButton} onPress={onReset} activeOpacity={0.7}>
+        <Text style={styles.resetText}>{STRINGS.resetView}</Text>
+      </TouchableOpacity>
 
       {/* Search FAB */}
       <TouchableOpacity style={styles.searchFab} onPress={onSearch} activeOpacity={0.8}>
@@ -107,6 +120,25 @@ const styles = StyleSheet.create({
   zoomDividerLine: {
     height: 1,
     backgroundColor: theme.border,
+  },
+  resetButton: {
+    position: 'absolute',
+    top: 106,
+    right: 16,
+    backgroundColor: `${theme.surface}cc`,
+    borderRadius: 2,
+    borderWidth: 1,
+    borderColor: theme.border,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  resetText: {
+    color: theme.textSecondary,
+    fontSize: 10,
+    fontWeight: '400',
+    letterSpacing: 0.5,
   },
   searchFab: {
     position: 'absolute',

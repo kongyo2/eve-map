@@ -97,7 +97,8 @@ export default function SearchScreen() {
                   router.back();
                 }}
               >
-                <Text style={styles.miniActionText}>A</Text>
+                <View style={[styles.miniDot, { backgroundColor: theme.accent }]} />
+                <Text style={styles.miniActionText}>{STRINGS.routeFromShort}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.miniAction}
@@ -106,7 +107,10 @@ export default function SearchScreen() {
                   router.back();
                 }}
               >
-                <Text style={[styles.miniActionText, { color: theme.route }]}>B</Text>
+                <View style={[styles.miniDot, { backgroundColor: theme.route }]} />
+                <Text style={[styles.miniActionText, { color: theme.route }]}>
+                  {STRINGS.routeToShort}
+                </Text>
               </TouchableOpacity>
             </View>
           )}
@@ -290,17 +294,25 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   miniAction: {
-    width: 24,
     height: 24,
+    paddingHorizontal: 6,
     borderRadius: 2,
     borderWidth: 1,
     borderColor: theme.border,
     alignItems: 'center',
     justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 3,
+  },
+  miniDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
   },
   miniActionText: {
     color: theme.accent,
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '500',
+    letterSpacing: 0.3,
   },
 });

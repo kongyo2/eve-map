@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated, Dimensions } from 'react-native';
+import { useRouter } from 'expo-router';
 import { theme, securityColor } from '../../constants/colors';
 import { STRINGS } from '../../constants/strings';
 import { formatSecurity, classifySecurity } from '../../utils/security';
@@ -22,6 +23,7 @@ const securityLabel = (sec: number): string => {
 };
 
 export const SystemSheet = () => {
+  const router = useRouter();
   const slideAnim = useRef(new Animated.Value(SHEET_HEIGHT)).current;
   const selectedSystemId = useMapStore((s) => s.selectedSystemId);
   const showSystemSheet = useMapStore((s) => s.showSystemSheet);
@@ -118,6 +120,7 @@ export const SystemSheet = () => {
           style={[styles.actionButton, styles.actionButtonAccent]}
           onPress={() => {
             setShowSystemSheet(false);
+            router.push(`/system/${system.id}`);
           }}
         >
           <Text style={[styles.actionText, styles.actionTextAccent]}>{STRINGS.viewDetails}</Text>

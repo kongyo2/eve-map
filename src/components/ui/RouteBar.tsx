@@ -1,16 +1,16 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { theme } from '../../constants/colors';
 import { STRINGS } from '../../constants/strings';
 import { useUniverseStore } from '../../store/universeStore';
 import { useRoute } from '../../hooks/useRoute';
 
 export const RouteBar = () => {
-  const { route, originId, destinationId, clear } = useRoute();
+  const { route, originId, destinationId, isCalculating, error, clear } = useRoute();
   const getSystem = useUniverseStore((s) => s.getSystem);
   const originName = originId ? getSystem(originId)?.name : null;
   const destName = destinationId ? getSystem(destinationId)?.name : null;
 
-  if (!route || route.length === 0) return null;
+  if (!originId && !destinationId) return null;
 
   return (
     <View style={styles.container}>
@@ -18,23 +18,31 @@ export const RouteBar = () => {
         <View style={styles.routeRow}>
           <View style={[styles.dot, styles.originDot]} />
           <Text style={styles.routeLabel} numberOfLines={1}>
-            {originName ?? '---'}
+            {originName ?? STRINGS.routeFrom}
           </Text>
         </View>
         <View style={styles.routeLine} />
         <View style={styles.routeRow}>
           <View style={[styles.dot, styles.destDot]} />
           <Text style={styles.routeLabel} numberOfLines={1}>
-            {destName ?? '---'}
+            {destName ?? STRINGS.routeTo}
           </Text>
         </View>
       </View>
 
       <View style={styles.rightSection}>
-        <View style={styles.jumpCount}>
-          <Text style={styles.jumpNumber}>{route.length}</Text>
-          <Text style={styles.jumpUnit}>{STRINGS.routeJumps}</Text>
-        </View>
+        {isCalculating ? (
+          <ActivityIndicator size="small" color={theme.route} />
+        ) : error ? (
+          <Text style={styles.errorText} numberOfLines={1}>
+            {error}
+          </Text>
+        ) : route && route.length > 0 ? (
+          <View style={styles.jumpCount}>
+            <Text style={styles.jumpNumber}>{route.length}</Text>
+            <Text style={styles.jumpUnit}>{STRINGS.routeJumps}</Text>
+          </View>
+        ) : null}
         <TouchableOpacity style={styles.clearButton} onPress={clear}>
           <Text style={styles.clearText}>x</Text>
         </TouchableOpacity>
@@ -108,6 +116,12 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '300',
     letterSpacing: 1,
+  },
+  errorText: {
+    color: theme.error,
+    fontSize: 10,
+    fontWeight: '400',
+    maxWidth: 100,
   },
   clearButton: {
     width: 28,

@@ -1,14 +1,16 @@
-import { useCallback } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useUniverseData } from '../src/hooks/useUniverseData';
+import { useAutoRoute } from '../src/hooks/useAutoRoute';
 import { useUniverseStore } from '../src/store/universeStore';
 import { useMapStore } from '../src/store/mapStore';
-import { MapCanvas } from '../src/components/map/MapCanvas';
+import { MapCanvas, type MapCanvasRef } from '../src/components/map/MapCanvas';
 import { MapControls } from '../src/components/map/MapControls';
 import { SystemSheet } from '../src/components/ui/SystemSheet';
 import { LoadingScreen } from '../src/components/ui/LoadingScreen';
 import { RouteBar } from '../src/components/ui/RouteBar';
+import { GestureHint } from '../src/components/ui/GestureHint';
 import { theme } from '../src/constants/colors';
 
 export default function MapScreen() {
@@ -16,18 +18,27 @@ export default function MapScreen() {
   const { loadingPhase, loadingProgress, errorMessage, retry } = useUniverseData();
   const systems = useUniverseStore((s) => s.systems);
   const detailLevel = useMapStore((s) => s.detailLevel);
-  const routeSystemIds = useMapStore((s) => s.routeSystemIds);
+  const routeOriginId = useMapStore((s) => s.routeOriginId);
+  const routeDestinationId = useMapStore((s) => s.routeDestinationId);
+  const mapRef = useRef<MapCanvasRef>(null);
+  const [showHints, setShowHints] = useState(true);
+
+  useAutoRoute();
 
   const handleSearch = useCallback(() => {
     router.push('/search');
   }, [router]);
 
   const handleZoomIn = useCallback(() => {
-    // Zoom is handled by Skia canvas gestures; this is a UI convenience
+    mapRef.current?.zoomIn();
   }, []);
 
   const handleZoomOut = useCallback(() => {
-    // Zoom is handled by Skia canvas gestures; this is a UI convenience
+    mapRef.current?.zoomOut();
+  }, []);
+
+  const handleReset = useCallback(() => {
+    mapRef.current?.resetView();
   }, []);
 
   if (loadingPhase !== 'ready') {
@@ -43,16 +54,18 @@ export default function MapScreen() {
 
   return (
     <View style={styles.container}>
-      <MapCanvas />
+      <MapCanvas ref={mapRef} />
       <MapControls
         detailLevel={detailLevel}
         systemCount={systems.size}
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
+        onReset={handleReset}
         onSearch={handleSearch}
       />
-      {routeSystemIds && routeSystemIds.length > 0 && <RouteBar />}
+      {(routeOriginId || routeDestinationId) && <RouteBar />}
       <SystemSheet />
+      {showHints && <GestureHint onDismiss={() => setShowHints(false)} />}
     </View>
   );
 }

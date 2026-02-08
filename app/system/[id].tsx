@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -46,6 +46,18 @@ export default function SystemDetailScreen() {
   const region = system ? getRegion(system.regionId) : undefined;
   const constellation = system ? getConstellation(system.constellationId) : undefined;
   const connectedIds = getConnectedSystems(systemId);
+
+  const sortedConnectedIds = useMemo(() => {
+    return [...connectedIds].sort((a, b) => {
+      const sysA = getSystem(a);
+      const sysB = getSystem(b);
+      if (!sysA || !sysB) return 0;
+      if (sysB.securityStatus !== sysA.securityStatus) {
+        return sysB.securityStatus - sysA.securityStatus;
+      }
+      return sysA.name.localeCompare(sysB.name);
+    });
+  }, [connectedIds, getSystem]);
 
   const [kills, setKills] = useState<SystemKills | null>(null);
   const [jumps, setJumps] = useState<SystemJumps | null>(null);
@@ -235,7 +247,7 @@ export default function SystemDetailScreen() {
           <Text style={styles.sectionTitle}>
             {STRINGS.connectedSystems} ({connectedIds.length})
           </Text>
-          {connectedIds.map((connId) => {
+          {sortedConnectedIds.map((connId) => {
             const connSys = getSystem(connId);
             if (!connSys) return null;
             const connSecColor = securityColor(connSys.securityStatus);
