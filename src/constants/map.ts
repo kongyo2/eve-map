@@ -38,4 +38,22 @@ export const MAP = {
     30002510, // Rens
     30002053, // Hek
   ] as readonly number[],
+  // Trade hub region IDs
+  TRADE_HUB_REGIONS: [
+    10000002, // The Forge (Jita)
+    10000043, // Domain (Amarr)
+    10000032, // Sinq Laison (Dodixie)
+    10000042, // Metropolis (Rens)
+    10000030, // Heimatar (Hek)
+  ] as readonly number[],
 } as const;
+
+// Key market items to display
+export const MARKET_ITEMS = [
+  { typeId: 44992, name: 'PLEX' },
+  { typeId: 34, name: 'トリタニウム' },
+  { typeId: 35, name: 'パイライト' },
+  { typeId: 36, name: 'メキサロン' },
+  { typeId: 38, name: 'ノキシウム' },
+  { typeId: 40, name: 'メガサイト' },
+] as const;

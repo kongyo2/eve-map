@@ -153,6 +153,21 @@ export const STRINGS = {
   calculateAllRoutes: '全ルート計算',
   activeRoute: 'アクティブルート',
 
+  // Market data
+  marketData: 'マーケットデータ',
+  marketBuy: '買い',
+  marketSell: '売り',
+  marketSpread: 'スプレッド',
+  marketVolume: '取引量',
+  marketOrders: 'オーダー数',
+  marketNoData: 'データなし',
+  marketPrice: '価格',
+  marketAvgPrice: '平均価格',
+  marketHighPrice: '最高値',
+  marketLowPrice: '最安値',
+  marketRegionalPrices: 'リージョンマーケット',
+  marketLoadError: 'マーケットデータの取得に失敗しました',
+
   // Errors
   networkError: 'ネットワークエラーが発生しました',
   loadError: 'データの読み込みに失敗しました',

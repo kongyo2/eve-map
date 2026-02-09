@@ -91,3 +91,29 @@ export type SecurityLevel = 'highsec' | 'lowsec' | 'nullsec';
 export type RoutePreference = 'shortest' | 'secure' | 'insecure';
 
 export type DetailLevel = 'region' | 'constellation' | 'system';
+
+export type MarketStats = {
+  readonly buyVolume: number;
+  readonly sellVolume: number;
+  readonly buyOrders: number;
+  readonly sellOrders: number;
+  readonly maxBuy: number;
+  readonly minSell: number;
+  readonly buyAvgFivePercent: number;
+  readonly sellAvgFivePercent: number;
+};
+
+export type MarketHistoryEntry = {
+  readonly date: number;
+  readonly average: number;
+  readonly highest: number;
+  readonly lowest: number;
+  readonly volume: number;
+  readonly orderCount: number;
+};
+
+export type MarketItemInfo = {
+  readonly typeId: number;
+  readonly name: string;
+  readonly stats: MarketStats | null;
+};

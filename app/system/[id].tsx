@@ -16,8 +16,9 @@ import { STRINGS } from '../../src/constants/strings';
 import { formatSecurity, classifySecurity } from '../../src/utils/security';
 import { fetchSystemKills, fetchSystemJumps, fetchStations } from '../../src/api/esi';
 import { fetchRecentKills } from '../../src/api/evekill';
+import { fetchMultipleMarketStats } from '../../src/api/evetycoon';
 import { findNearestTradeHub } from '../../src/utils/bfs';
-import { MAP } from '../../src/constants/map';
+import { MAP, MARKET_ITEMS } from '../../src/constants/map';
 import {
   getServiceName,
   getServiceCategory,
@@ -29,6 +30,7 @@ import type {
   Station,
   Killmail,
   RoutePreference,
+  MarketStats,
 } from '../../src/types/universe';
 
 const securityLabel = (sec: number): string => {
@@ -114,6 +116,10 @@ export default function SystemDetailScreen() {
   const [killmails, setKillmails] = useState<readonly Killmail[]>([]);
   const [killmailsLoading, setKillmailsLoading] = useState(true);
 
+  // Market data
+  const [marketData, setMarketData] = useState<ReadonlyMap<number, MarketStats>>(new Map());
+  const [marketLoading, setMarketLoading] = useState(true);
+
   useEffect(() => {
     const loadStats = async () => {
       setStatsLoading(true);
@@ -168,6 +174,24 @@ export default function SystemDetailScreen() {
       setKillmailsLoading(false);
     });
   }, [systemId]);
+
+  // Load market data from EVE Tycoon
+  const regionId = system?.regionId;
+  useEffect(() => {
+    if (!regionId) {
+      setMarketLoading(false);
+      return;
+    }
+    setMarketLoading(true);
+    const typeIds = MARKET_ITEMS.map((item) => item.typeId);
+    fetchMultipleMarketStats(regionId, typeIds).then((result) => {
+      result.match(
+        (data) => setMarketData(data),
+        () => setMarketData(new Map()),
+      );
+      setMarketLoading(false);
+    });
+  }, [regionId]);
 
   const handleOrigin = useCallback(() => {
     setRouteOrigin(systemId);
@@ -346,6 +370,59 @@ export default function SystemDetailScreen() {
           <View style={styles.statsGrid}>
             <StatBox label={STRINGS.shipJumps} value={jumps?.shipJumps ?? 0} color={theme.accent} />
           </View>
+        </View>
+
+        {/* Market data */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{STRINGS.marketRegionalPrices}</Text>
+          {marketLoading ? (
+            <ActivityIndicator size="small" color={theme.accent} />
+          ) : marketData.size === 0 ? (
+            <Text style={styles.emptyText}>{STRINGS.marketNoData}</Text>
+          ) : (
+            <View style={styles.marketContainer}>
+              {MARKET_ITEMS.map((item) => {
+                const stats = marketData.get(item.typeId);
+                if (!stats) return null;
+                const spread =
+                  stats.minSell > 0 && stats.maxBuy > 0
+                    ? (((stats.minSell - stats.maxBuy) / stats.minSell) * 100).toFixed(1)
+                    : null;
+                return (
+                  <View key={item.typeId} style={styles.marketItem}>
+                    <View style={styles.marketItemHeader}>
+                      <Text style={styles.marketItemName}>{item.name}</Text>
+                      {spread !== null && (
+                        <Text style={styles.marketSpread}>
+                          {STRINGS.marketSpread} {spread}%
+                        </Text>
+                      )}
+                    </View>
+                    <View style={styles.marketPriceRow}>
+                      <View style={styles.marketPriceCol}>
+                        <Text style={styles.marketPriceLabel}>{STRINGS.marketSell}</Text>
+                        <Text style={[styles.marketPriceValue, { color: theme.error }]}>
+                          {stats.minSell > 0 ? formatIsk(stats.minSell) : '-'}
+                        </Text>
+                      </View>
+                      <View style={styles.marketPriceCol}>
+                        <Text style={styles.marketPriceLabel}>{STRINGS.marketBuy}</Text>
+                        <Text style={[styles.marketPriceValue, { color: theme.highsec }]}>
+                          {stats.maxBuy > 0 ? formatIsk(stats.maxBuy) : '-'}
+                        </Text>
+                      </View>
+                      <View style={styles.marketPriceCol}>
+                        <Text style={styles.marketPriceLabel}>{STRINGS.marketVolume}</Text>
+                        <Text style={styles.marketPriceValue}>
+                          {(stats.buyVolume + stats.sellVolume).toLocaleString()}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          )}
         </View>
 
         {/* Station services */}
@@ -597,6 +674,48 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   statsGrid: { flexDirection: 'row', gap: 8 },
+  // Market styles
+  marketContainer: { gap: 8 },
+  marketItem: {
+    backgroundColor: theme.surface,
+    borderRadius: 3,
+    borderWidth: 1,
+    borderColor: theme.border,
+    padding: 12,
+  },
+  marketItemHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  marketItemName: {
+    color: theme.text,
+    fontSize: 13,
+    fontWeight: '400',
+    letterSpacing: 0.5,
+  },
+  marketSpread: {
+    color: theme.textDim,
+    fontSize: 10,
+    fontWeight: '300',
+    letterSpacing: 0.5,
+  },
+  marketPriceRow: { flexDirection: 'row', gap: 8 },
+  marketPriceCol: { flex: 1, alignItems: 'center' },
+  marketPriceLabel: {
+    color: theme.textDim,
+    fontSize: 9,
+    fontWeight: '400',
+    letterSpacing: 1,
+    marginBottom: 2,
+  },
+  marketPriceValue: {
+    color: theme.text,
+    fontSize: 12,
+    fontWeight: '200',
+    letterSpacing: 0.5,
+  },
   // Station styles
   stationCard: {
     backgroundColor: theme.surface,

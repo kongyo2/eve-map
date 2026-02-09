@@ -112,6 +112,33 @@ export const EsiRouteSchema = z.array(z.number());
 export const EsiSystemIdsSchema = z.array(z.number());
 export const EsiRegionIdsSchema = z.array(z.number());
 
+// EVE Tycoon API schemas
+export const EveTycoonMarketStatsSchema = z.object({
+  buyVolume: z.number(),
+  sellVolume: z.number(),
+  buyOrders: z.number(),
+  sellOrders: z.number(),
+  buyOutliers: z.number(),
+  sellOutliers: z.number(),
+  buyThreshold: z.number(),
+  sellThreshold: z.number(),
+  buyAvgFivePercent: z.number(),
+  sellAvgFivePercent: z.number(),
+  maxBuy: z.number(),
+  minSell: z.number(),
+});
+
+export const EveTycoonMarketHistoryEntrySchema = z.object({
+  date: z.number(),
+  regionId: z.number(),
+  typeId: z.number(),
+  average: z.number(),
+  highest: z.number(),
+  lowest: z.number(),
+  orderCount: z.number(),
+  volume: z.number(),
+});
+
 export type EsiSystemResponse = z.infer<typeof EsiSystemSchema>;
 export type EsiConstellationResponse = z.infer<typeof EsiConstellationSchema>;
 export type EsiRegionResponse = z.infer<typeof EsiRegionSchema>;
@@ -119,3 +146,5 @@ export type EsiStargateResponse = z.infer<typeof EsiStargateSchema>;
 export type EsiStationResponse = z.infer<typeof EsiStationSchema>;
 export type EsiSovSystemResponse = z.infer<typeof EsiSovSystemSchema>;
 export type EveKillKillmailResponse = z.infer<typeof EveKillKillmailSchema>;
+export type EveTycoonMarketStatsResponse = z.infer<typeof EveTycoonMarketStatsSchema>;
+export type EveTycoonMarketHistoryEntry = z.infer<typeof EveTycoonMarketHistoryEntrySchema>;
