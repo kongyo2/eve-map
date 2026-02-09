@@ -8,6 +8,7 @@ type Props = {
   detailLevel: DetailLevel;
   systemCount: number;
   heatmapActive: boolean;
+  bottomOffset: number;
   onZoomIn: () => void;
   onZoomOut: () => void;
   onReset: () => void;
@@ -30,6 +31,7 @@ export const MapControls = ({
   detailLevel,
   systemCount,
   heatmapActive,
+  bottomOffset,
   onZoomIn,
   onZoomOut,
   onReset,
@@ -76,7 +78,7 @@ export const MapControls = ({
 
       {/* Search FAB */}
       <TouchableOpacity
-        style={[styles.searchFab, { bottom: 32 + insets.bottom }]}
+        style={[styles.searchFab, { bottom: 32 + insets.bottom + bottomOffset }]}
         onPress={onSearch}
         activeOpacity={0.8}
       >

@@ -19,7 +19,7 @@ import { useMapStore } from '../../store/mapStore';
 import { useRoute } from '../../hooks/useRoute';
 import type { RoutePreference } from '../../types/universe';
 
-export const RouteBar = () => {
+export const RouteBar = ({ onLayout }: { onLayout?: (height: number) => void }) => {
   const insets = useSafeAreaInsets();
   const { route, originId, destinationId, isCalculating, error, clear, swap, preference, setPreference } =
     useRoute();
@@ -52,7 +52,10 @@ export const RouteBar = () => {
   const jumpCount = hasRoute ? route.length - 1 : 0;
 
   return (
-    <View style={[styles.container, { paddingBottom: insets.bottom }]}>
+    <View
+      style={[styles.container, { paddingBottom: insets.bottom }]}
+      onLayout={(e) => onLayout?.(e.nativeEvent.layout.height)}
+    >
       {/* Expandable step list */}
       {expanded && hasRoute && (
         <View style={styles.stepListContainer}>

@@ -60,6 +60,9 @@ export default function MapScreen() {
     );
   }
 
+  const [routeBarHeight, setRouteBarHeight] = useState(0);
+  const showRouteBar = !!(routeOriginId || routeDestinationId);
+
   return (
     <View style={styles.container}>
       <MapCanvas ref={mapRef} />
@@ -67,13 +70,14 @@ export default function MapScreen() {
         detailLevel={detailLevel}
         systemCount={systems.size}
         heatmapActive={heatmapActive}
+        bottomOffset={showRouteBar ? routeBarHeight : 0}
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
         onReset={handleReset}
         onSearch={handleSearch}
         onToggleHeatmap={handleToggleHeatmap}
       />
-      {(routeOriginId || routeDestinationId) && <RouteBar />}
+      {showRouteBar && <RouteBar onLayout={setRouteBarHeight} />}
       <SystemSheet />
       {showHints && <GestureHint onDismiss={() => setShowHints(false)} />}
     </View>
