@@ -73,6 +73,11 @@ export const STRINGS = {
   close: '閉じる',
   retry: '再試行',
 
+  // Route enhancements
+  routeDetails: 'ルート詳細',
+  routeOriginLabel: '出発',
+  routeDestLabel: '到着',
+
   // Route short labels (search)
   routeFromShort: '出発',
   routeToShort: '目的',

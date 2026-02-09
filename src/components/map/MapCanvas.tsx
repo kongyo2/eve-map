@@ -22,6 +22,7 @@ import {
 import { useUniverseStore } from '../../store/universeStore';
 import { useMapStore } from '../../store/mapStore';
 import { securityColor, theme } from '../../constants/colors';
+import { classifySecurity } from '../../utils/security';
 import { MAP } from '../../constants/map';
 import { screenToWorld, distanceSquared } from '../../utils/coordinates';
 
@@ -44,6 +45,8 @@ export const MapCanvas = forwardRef<MapCanvasRef>((_, ref) => {
   const constellations = useUniverseStore((s) => s.constellations);
   const regions = useUniverseStore((s) => s.regions);
   const routeSystemIds = useMapStore((s) => s.routeSystemIds);
+  const routeOriginId = useMapStore((s) => s.routeOriginId);
+  const routeDestinationId = useMapStore((s) => s.routeDestinationId);
   const selectedSystemId = useMapStore((s) => s.selectedSystemId);
   const selectSystem = useMapStore((s) => s.selectSystem);
 
@@ -114,22 +117,30 @@ export const MapCanvas = forwardRef<MapCanvasRef>((_, ref) => {
     return path;
   }, [connections, systems]);
 
-  // Build route path
-  const routePath = useMemo(() => {
+  // Build security-colored route segment paths
+  const routeSegmentPaths = useMemo(() => {
     if (!routeSystemIds || routeSystemIds.length < 2) return null;
-    const path = Skia.Path.Make();
-    let first = true;
-    for (const sysId of routeSystemIds) {
-      const sys = systems.get(sysId);
-      if (!sys) continue;
-      if (first) {
-        path.moveTo(sys.nx, sys.nz);
-        first = false;
-      } else {
-        path.lineTo(sys.nx, sys.nz);
-      }
+
+    const highsecPath = Skia.Path.Make();
+    const lowsecPath = Skia.Path.Make();
+    const nullsecPath = Skia.Path.Make();
+
+    for (let i = 0; i < routeSystemIds.length - 1; i++) {
+      const fromSys = systems.get(routeSystemIds[i]);
+      const toSys = systems.get(routeSystemIds[i + 1]);
+      if (!fromSys || !toSys) continue;
+
+      const secLevel = classifySecurity(toSys.securityStatus);
+      const targetPath =
+        secLevel === 'highsec' ? highsecPath :
+        secLevel === 'lowsec' ? lowsecPath :
+        nullsecPath;
+
+      targetPath.moveTo(fromSys.nx, fromSys.nz);
+      targetPath.lineTo(toSys.nx, toSys.nz);
     }
-    return path;
+
+    return { highsecPath, lowsecPath, nullsecPath };
   }, [routeSystemIds, systems]);
 
   // Route system set for highlight
@@ -137,6 +148,29 @@ export const MapCanvas = forwardRef<MapCanvasRef>((_, ref) => {
     if (!routeSystemIds) return new Set<number>();
     return new Set(routeSystemIds);
   }, [routeSystemIds]);
+
+  // Origin/destination system data for markers
+  const originSystem = useMemo(
+    () => (routeOriginId ? systems.get(routeOriginId) : undefined),
+    [routeOriginId, systems],
+  );
+  const destSystem = useMemo(
+    () => (routeDestinationId ? systems.get(routeDestinationId) : undefined),
+    [routeDestinationId, systems],
+  );
+
+  // Destination diamond path
+  const destDiamondPath = useMemo(() => {
+    if (!destSystem) return null;
+    const path = Skia.Path.Make();
+    const s = 0.22;
+    path.moveTo(destSystem.nx, destSystem.nz - s);
+    path.lineTo(destSystem.nx + s * 0.6, destSystem.nz);
+    path.lineTo(destSystem.nx, destSystem.nz + s);
+    path.lineTo(destSystem.nx - s * 0.6, destSystem.nz);
+    path.close();
+    return path;
+  }, [destSystem]);
 
   // Region centers for labels
   const regionCenters = useMemo(() => {
@@ -244,10 +278,46 @@ export const MapCanvas = forwardRef<MapCanvasRef>((_, ref) => {
     return paint;
   }, []);
 
-  const routePaint = useMemo(() => {
+  const routeHighsecPaint = useMemo(() => {
+    const paint = Skia.Paint();
+    paint.setColor(Skia.Color(theme.highsec));
+    paint.setStrokeWidth(0.06);
+    paint.setStyle(PaintStyle.Stroke);
+    paint.setAntiAlias(true);
+    return paint;
+  }, []);
+
+  const routeLowsecPaint = useMemo(() => {
+    const paint = Skia.Paint();
+    paint.setColor(Skia.Color(theme.lowsec));
+    paint.setStrokeWidth(0.06);
+    paint.setStyle(PaintStyle.Stroke);
+    paint.setAntiAlias(true);
+    return paint;
+  }, []);
+
+  const routeNullsecPaint = useMemo(() => {
+    const paint = Skia.Paint();
+    paint.setColor(Skia.Color(theme.nullsec));
+    paint.setStrokeWidth(0.06);
+    paint.setStyle(PaintStyle.Stroke);
+    paint.setAntiAlias(true);
+    return paint;
+  }, []);
+
+  const originRingPaint = useMemo(() => {
+    const paint = Skia.Paint();
+    paint.setColor(Skia.Color(theme.accent));
+    paint.setStrokeWidth(0.03);
+    paint.setStyle(PaintStyle.Stroke);
+    paint.setAntiAlias(true);
+    return paint;
+  }, []);
+
+  const destRingPaint = useMemo(() => {
     const paint = Skia.Paint();
     paint.setColor(Skia.Color(theme.route));
-    paint.setStrokeWidth(0.06);
+    paint.setStrokeWidth(0.03);
     paint.setStyle(PaintStyle.Stroke);
     paint.setAntiAlias(true);
     return paint;
@@ -261,8 +331,14 @@ export const MapCanvas = forwardRef<MapCanvasRef>((_, ref) => {
             {/* Stargate connections */}
             <Path path={connectionPath} paint={connectionPaint} />
 
-            {/* Route overlay */}
-            {routePath && <Path path={routePath} paint={routePaint} />}
+            {/* Route overlay - security colored segments */}
+            {routeSegmentPaths && (
+              <>
+                <Path path={routeSegmentPaths.highsecPath} paint={routeHighsecPaint} />
+                <Path path={routeSegmentPaths.lowsecPath} paint={routeLowsecPaint} />
+                <Path path={routeSegmentPaths.nullsecPath} paint={routeNullsecPaint} />
+              </>
+            )}
 
             {/* System nodes */}
             {systemArray.map((sys) => {
@@ -272,12 +348,26 @@ export const MapCanvas = forwardRef<MapCanvasRef>((_, ref) => {
               const radius = isHub ? 0.15 : isSelected ? 0.12 : isOnRoute ? 0.1 : 0.06;
               const color = isSelected
                 ? theme.selectedHighlight
-                : isOnRoute
-                  ? theme.route
-                  : securityColor(sys.securityStatus);
+                : securityColor(sys.securityStatus);
 
               return <Circle key={sys.id} cx={sys.nx} cy={sys.nz} r={radius} color={color} />;
             })}
+
+            {/* Origin marker: concentric ring */}
+            {originSystem && (
+              <>
+                <Circle cx={originSystem.nx} cy={originSystem.nz} r={0.2} paint={originRingPaint} />
+                <Circle cx={originSystem.nx} cy={originSystem.nz} r={0.12} color={theme.accent} />
+              </>
+            )}
+
+            {/* Destination marker: diamond outline + filled dot */}
+            {destSystem && destDiamondPath && (
+              <>
+                <Path path={destDiamondPath} paint={destRingPaint} />
+                <Circle cx={destSystem.nx} cy={destSystem.nz} r={0.12} color={theme.route} />
+              </>
+            )}
 
             {/* Region labels */}
             {regionCenters.map((rc) => (

@@ -204,7 +204,7 @@ export default function SystemDetailScreen() {
               </TouchableOpacity>
               {route && (
                 <Text style={styles.routeResult}>
-                  {STRINGS.routeResult}: {route.length} {STRINGS.routeJumps}
+                  {STRINGS.routeResult}: {route.length - 1} {STRINGS.routeJumps}
                 </Text>
               )}
             </View>
