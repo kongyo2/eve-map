@@ -49,6 +49,14 @@ export default function RootLayout() {
             }}
           />
           <Stack.Screen
+            name="nearby"
+            options={{
+              title: '周辺検索',
+              presentation: 'modal',
+              headerStyle: { backgroundColor: theme.surface },
+            }}
+          />
+          <Stack.Screen
             name="system/[id]"
             options={{
               title: 'システム情報',

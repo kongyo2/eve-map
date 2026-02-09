@@ -1,3 +1,34 @@
+export type NearbyResult = {
+  readonly systemId: number;
+  readonly distance: number;
+};
+
+export const findSystemsInRange = (
+  originId: number,
+  adjacencyList: ReadonlyMap<number, readonly number[]>,
+  maxJumps: number,
+): readonly NearbyResult[] => {
+  const results: NearbyResult[] = [];
+  const visited = new Set<number>([originId]);
+  const queue: { id: number; dist: number }[] = [{ id: originId, dist: 0 }];
+
+  while (queue.length > 0) {
+    const { id, dist } = queue.shift()!;
+    if (dist > 0) {
+      results.push({ systemId: id, distance: dist });
+    }
+    if (dist >= maxJumps) continue;
+    const neighbors = adjacencyList.get(id) ?? [];
+    for (const neighbor of neighbors) {
+      if (visited.has(neighbor)) continue;
+      visited.add(neighbor);
+      queue.push({ id: neighbor, dist: dist + 1 });
+    }
+  }
+
+  return results;
+};
+
 export type TradeHubResult = {
   readonly hubId: number;
   readonly distance: number;

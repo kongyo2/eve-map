@@ -2,18 +2,21 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '../../constants/colors';
 import { STRINGS } from '../../constants/strings';
-import type { DetailLevel } from '../../types/universe';
+import type { DetailLevel, HeatmapMode } from '../../types/universe';
 
 type Props = {
   detailLevel: DetailLevel;
   systemCount: number;
-  heatmapActive: boolean;
+  heatmapMode: HeatmapMode;
+  sovActive: boolean;
   bottomOffset: number;
   onZoomIn: () => void;
   onZoomOut: () => void;
   onReset: () => void;
   onSearch: () => void;
   onToggleHeatmap: () => void;
+  onToggleSov: () => void;
+  onNearbySearch?: () => void;
 };
 
 const detailLevelLabel = (level: DetailLevel): string => {
@@ -27,18 +30,33 @@ const detailLevelLabel = (level: DetailLevel): string => {
   }
 };
 
+const heatmapLabel = (mode: HeatmapMode): string => {
+  switch (mode) {
+    case 'off':
+      return STRINGS.heatmapOff;
+    case 'kills':
+      return STRINGS.heatmapKills;
+    case 'jumps':
+      return STRINGS.heatmapJumps;
+  }
+};
+
 export const MapControls = ({
   detailLevel,
   systemCount,
-  heatmapActive,
+  heatmapMode,
+  sovActive,
   bottomOffset,
   onZoomIn,
   onZoomOut,
   onReset,
   onSearch,
   onToggleHeatmap,
+  onToggleSov,
+  onNearbySearch,
 }: Props) => {
   const insets = useSafeAreaInsets();
+  const heatmapOn = heatmapMode !== 'off';
 
   return (
     <>
@@ -65,16 +83,42 @@ export const MapControls = ({
         <Text style={styles.resetText}>{STRINGS.resetView}</Text>
       </TouchableOpacity>
 
-      {/* Heatmap toggle */}
+      {/* Heatmap cycle button */}
       <TouchableOpacity
-        style={[styles.heatmapButton, heatmapActive && styles.heatmapButtonActive]}
+        style={[
+          styles.overlayButton,
+          styles.heatmapButton,
+          heatmapOn && styles.overlayButtonActive,
+        ]}
         onPress={onToggleHeatmap}
         activeOpacity={0.7}
       >
-        <Text style={[styles.heatmapText, heatmapActive && styles.heatmapTextActive]}>
-          {heatmapActive ? STRINGS.heatmapActive : STRINGS.heatmapToggle}
+        <Text style={[styles.overlayText, heatmapOn && styles.overlayTextActive]}>
+          {heatmapOn ? heatmapLabel(heatmapMode) : STRINGS.heatmapToggle}
         </Text>
       </TouchableOpacity>
+
+      {/* Sovereignty toggle */}
+      <TouchableOpacity
+        style={[styles.overlayButton, styles.sovButton, sovActive && styles.sovButtonActive]}
+        onPress={onToggleSov}
+        activeOpacity={0.7}
+      >
+        <Text style={[styles.overlayText, sovActive && styles.sovTextActive]}>
+          {sovActive ? STRINGS.sovActive : STRINGS.sovToggle}
+        </Text>
+      </TouchableOpacity>
+
+      {/* Nearby search button */}
+      {onNearbySearch && (
+        <TouchableOpacity
+          style={[styles.overlayButton, styles.nearbyButton]}
+          onPress={onNearbySearch}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.overlayText}>{STRINGS.nearbySearch}</Text>
+        </TouchableOpacity>
+      )}
 
       {/* Search FAB */}
       <TouchableOpacity
@@ -164,6 +208,47 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     letterSpacing: 0.5,
   },
+  overlayButton: {
+    position: 'absolute',
+    right: 16,
+    backgroundColor: `${theme.surface}cc`,
+    borderRadius: 2,
+    borderWidth: 1,
+    borderColor: theme.border,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heatmapButton: {
+    top: 150,
+  },
+  overlayButtonActive: {
+    borderColor: theme.danger,
+    backgroundColor: `${theme.danger}30`,
+  },
+  overlayText: {
+    color: theme.textSecondary,
+    fontSize: 10,
+    fontWeight: '400',
+    letterSpacing: 0.5,
+  },
+  overlayTextActive: {
+    color: theme.danger,
+  },
+  sovButton: {
+    top: 186,
+  },
+  sovButtonActive: {
+    borderColor: '#9c7cff',
+    backgroundColor: '#9c7cff30',
+  },
+  sovTextActive: {
+    color: '#9c7cff',
+  },
+  nearbyButton: {
+    top: 222,
+  },
   searchFab: {
     position: 'absolute',
     right: 16,
@@ -178,32 +263,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 12,
-  },
-  heatmapButton: {
-    position: 'absolute',
-    top: 150,
-    right: 16,
-    backgroundColor: `${theme.surface}cc`,
-    borderRadius: 2,
-    borderWidth: 1,
-    borderColor: theme.border,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  heatmapButtonActive: {
-    borderColor: theme.danger,
-    backgroundColor: `${theme.danger}30`,
-  },
-  heatmapText: {
-    color: theme.textSecondary,
-    fontSize: 10,
-    fontWeight: '400',
-    letterSpacing: 0.5,
-  },
-  heatmapTextActive: {
-    color: theme.danger,
   },
   searchIcon: {
     color: theme.background,

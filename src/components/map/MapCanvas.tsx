@@ -21,8 +21,16 @@ import {
 } from 'react-native-reanimated';
 import { useUniverseStore } from '../../store/universeStore';
 import { useMapStore } from '../../store/mapStore';
-import { securityColor, dangerColor, dangerRadius, theme } from '../../constants/colors';
+import {
+  securityColor,
+  dangerColor,
+  dangerRadius,
+  trafficColor,
+  trafficRadius,
+  theme,
+} from '../../constants/colors';
 import { classifySecurity } from '../../utils/security';
+import { sovColor } from '../../utils/sovColors';
 import { MAP } from '../../constants/map';
 import { screenToWorld, distanceSquared } from '../../utils/coordinates';
 
@@ -49,9 +57,15 @@ export const MapCanvas = forwardRef<MapCanvasRef>((_, ref) => {
   const routeDestinationId = useMapStore((s) => s.routeDestinationId);
   const selectedSystemId = useMapStore((s) => s.selectedSystemId);
   const selectSystem = useMapStore((s) => s.selectSystem);
-  const heatmapActive = useMapStore((s) => s.heatmapActive);
+  const heatmapMode = useMapStore((s) => s.heatmapMode);
   const killsMap = useMapStore((s) => s.killsMap);
+  const jumpsMap = useMapStore((s) => s.jumpsMap);
+  const avgJumps = useMapStore((s) => s.avgJumps);
+  const sovMode = useMapStore((s) => s.sovMode);
+  const sovMap = useMapStore((s) => s.sovMap);
   const avoidedSystemIds = useMapStore((s) => s.avoidedSystemIds);
+  const nearbySystemIds = useMapStore((s) => s.nearbySystemIds);
+  const alternateRoutes = useMapStore((s) => s.alternateRoutes);
 
   // Shared values for pan/zoom
   const panX = useSharedValue(width / 2);
@@ -148,6 +162,23 @@ export const MapCanvas = forwardRef<MapCanvasRef>((_, ref) => {
     return { highsecPath, lowsecPath, nullsecPath };
   }, [routeSystemIds, systems]);
 
+  // Alternate route paths for comparison
+  const altRoutePaths = useMemo(() => {
+    if (alternateRoutes.length === 0) return null;
+    return alternateRoutes.map((route) => {
+      const path = Skia.Path.Make();
+      for (let i = 0; i < route.systemIds.length - 1; i++) {
+        const from = systems.get(route.systemIds[i]);
+        const to = systems.get(route.systemIds[i + 1]);
+        if (from && to) {
+          path.moveTo(from.nx, from.nz);
+          path.lineTo(to.nx, to.nz);
+        }
+      }
+      return path;
+    });
+  }, [alternateRoutes, systems]);
+
   // Route system set for highlight
   const routeSystemSet = useMemo(() => {
     if (!routeSystemIds) return new Set<number>();
@@ -156,6 +187,12 @@ export const MapCanvas = forwardRef<MapCanvasRef>((_, ref) => {
 
   // Avoided system set for O(1) lookup
   const avoidedSet = useMemo(() => new Set(avoidedSystemIds), [avoidedSystemIds]);
+
+  // Nearby system set for O(1) lookup
+  const nearbySet = useMemo(
+    () => (nearbySystemIds ? new Set(nearbySystemIds) : null),
+    [nearbySystemIds],
+  );
 
   // Batched avoided X-marker path
   const avoidedXPath = useMemo(() => {
@@ -172,6 +209,26 @@ export const MapCanvas = forwardRef<MapCanvasRef>((_, ref) => {
     }
     return path;
   }, [avoidedSet, systems]);
+
+  // Nearby ring path
+  const nearbyRingPath = useMemo(() => {
+    if (!nearbySet || nearbySet.size === 0) return null;
+    const path = Skia.Path.Make();
+    for (const id of nearbySet) {
+      const sys = systems.get(id);
+      if (!sys) continue;
+      // Draw a small circle approximation using 8 line segments
+      const r = 0.16;
+      const segments = 12;
+      for (let i = 0; i < segments; i++) {
+        const a1 = (i / segments) * Math.PI * 2;
+        const a2 = ((i + 1) / segments) * Math.PI * 2;
+        path.moveTo(sys.nx + Math.cos(a1) * r, sys.nz + Math.sin(a1) * r);
+        path.lineTo(sys.nx + Math.cos(a2) * r, sys.nz + Math.sin(a2) * r);
+      }
+    }
+    return path;
+  }, [nearbySet, systems]);
 
   // Origin/destination system data for markers
   const originSystem = useMemo(
@@ -356,6 +413,33 @@ export const MapCanvas = forwardRef<MapCanvasRef>((_, ref) => {
     return paint;
   }, []);
 
+  const nearbyPaint = useMemo(() => {
+    const paint = Skia.Paint();
+    paint.setColor(Skia.Color('#9c7cff'));
+    paint.setStrokeWidth(0.02);
+    paint.setStyle(PaintStyle.Stroke);
+    paint.setAntiAlias(true);
+    return paint;
+  }, []);
+
+  const altRoutePaint1 = useMemo(() => {
+    const paint = Skia.Paint();
+    paint.setColor(Skia.Color('#00FFFF66'));
+    paint.setStrokeWidth(0.04);
+    paint.setStyle(PaintStyle.Stroke);
+    paint.setAntiAlias(true);
+    return paint;
+  }, []);
+
+  const altRoutePaint2 = useMemo(() => {
+    const paint = Skia.Paint();
+    paint.setColor(Skia.Color('#FF00FF66'));
+    paint.setStrokeWidth(0.04);
+    paint.setStyle(PaintStyle.Stroke);
+    paint.setAntiAlias(true);
+    return paint;
+  }, []);
+
   return (
     <View style={styles.container}>
       <GestureDetector gesture={composedGesture}>
@@ -363,6 +447,16 @@ export const MapCanvas = forwardRef<MapCanvasRef>((_, ref) => {
           <Group transform={transform}>
             {/* Stargate connections */}
             <Path path={connectionPath} paint={connectionPaint} />
+
+            {/* Alternate routes (rendered before main route) */}
+            {altRoutePaths &&
+              altRoutePaths.map((path, i) => (
+                <Path
+                  key={`alt-${i}`}
+                  path={path}
+                  paint={i === 0 ? altRoutePaint1 : altRoutePaint2}
+                />
+              ))}
 
             {/* Route overlay - security colored segments */}
             {routeSegmentPaths && (
@@ -372,6 +466,9 @@ export const MapCanvas = forwardRef<MapCanvasRef>((_, ref) => {
                 <Path path={routeSegmentPaths.nullsecPath} paint={routeNullsecPaint} />
               </>
             )}
+
+            {/* Nearby system rings */}
+            {nearbyRingPath && <Path path={nearbyRingPath} paint={nearbyPaint} />}
 
             {/* System nodes */}
             {systemArray.map((sys) => {
@@ -385,11 +482,22 @@ export const MapCanvas = forwardRef<MapCanvasRef>((_, ref) => {
               if (isSelected) {
                 color = theme.selectedHighlight;
                 radius = 0.12;
-              } else if (heatmapActive) {
+              } else if (sovMode) {
+                const sov = sovMap.get(sys.id);
+                color = sov ? sovColor(sov.allianceId, sov.factionId) : '#2a3050';
+                radius = isHub ? 0.15 : isOnRoute ? 0.1 : 0.06;
+              } else if (heatmapMode === 'kills') {
                 const kills = killsMap.get(sys.id);
                 const shipKills = kills?.shipKills ?? 0;
                 color = dangerColor(shipKills);
                 radius = dangerRadius(shipKills);
+                if (isHub) radius = Math.max(radius, 0.15);
+                if (isOnRoute) radius = Math.max(radius, 0.1);
+              } else if (heatmapMode === 'jumps') {
+                const j = jumpsMap.get(sys.id);
+                const shipJumps = j?.shipJumps ?? 0;
+                color = trafficColor(shipJumps, avgJumps);
+                radius = trafficRadius(shipJumps, avgJumps);
                 if (isHub) radius = Math.max(radius, 0.15);
                 if (isOnRoute) radius = Math.max(radius, 0.1);
               } else {

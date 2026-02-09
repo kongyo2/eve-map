@@ -1,4 +1,4 @@
-import { Result } from 'neverthrow';
+import { Result, ok, err } from 'neverthrow';
 import type { ApiError } from './client';
 import { fetchJson, batchFetch } from './client';
 import {
@@ -6,8 +6,10 @@ import {
   EsiConstellationSchema,
   EsiRegionSchema,
   EsiStargateSchema,
+  EsiStationSchema,
   EsiSystemKillsSchema,
   EsiSystemJumpsSchema,
+  EsiSovSystemSchema,
   EsiRouteSchema,
   EsiRegionIdsSchema,
 } from './schemas';
@@ -16,14 +18,17 @@ import type {
   EsiConstellationResponse,
   EsiRegionResponse,
   EsiStargateResponse,
+  EsiStationResponse,
 } from './schemas';
 import type {
   Region,
   Constellation,
   SolarSystem,
   Stargate,
+  Station,
   SystemKills,
   SystemJumps,
+  SovData,
   RoutePreference,
 } from '../types/universe';
 
@@ -70,6 +75,13 @@ const toStargate = (sg: EsiStargateResponse): Stargate => ({
   systemId: sg.system_id,
   destinationSystemId: sg.destination.system_id,
   destinationStargateId: sg.destination.stargate_id,
+});
+
+const toStation = (st: EsiStationResponse): Station => ({
+  stationId: st.station_id,
+  name: st.name,
+  systemId: st.system_id,
+  services: st.services,
 });
 
 // K-space region IDs: 10000001 - 10000070 (excluding 10000024, 10000026)
@@ -157,6 +169,53 @@ export const calculateRoute = async (
     url += `&${avoidParams}`;
   }
   return fetchJson(url, EsiRouteSchema);
+};
+
+export const fetchStation = async (stationId: number): Promise<Result<Station, ApiError>> => {
+  const result = await fetchJson(esiUrl(`/universe/stations/${stationId}/`), EsiStationSchema);
+  return result.map(toStation);
+};
+
+export const fetchStations = async (
+  stationIds: readonly number[],
+): Promise<Result<readonly Station[], ApiError>> => {
+  const urls = stationIds.map((id) => esiUrl(`/universe/stations/${id}/`));
+  const result = await batchFetch(urls, EsiStationSchema, 10, 100);
+  return result.map((stations) => stations.map(toStation));
+};
+
+export const fetchSovereigntyMap = async (): Promise<Result<readonly SovData[], ApiError>> => {
+  const result = await fetchJson(esiUrl('/sovereignty/map/'), EsiSovSystemSchema.array());
+  return result.map((sovs) =>
+    sovs.map((s) => ({
+      systemId: s.system_id,
+      allianceId: s.alliance_id,
+      corporationId: s.corporation_id,
+      factionId: s.faction_id,
+    })),
+  );
+};
+
+export const fetchNames = async (
+  ids: readonly number[],
+): Promise<Result<ReadonlyMap<number, string>, ApiError>> => {
+  // POST endpoint - fetchJson doesn't support POST body, use direct fetch
+  const response = await fetch(`${ESI_BASE}/universe/names/?datasource=tranquility`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify(ids),
+  }).catch((): null => null);
+
+  if (!response) {
+    return err({ kind: 'network', message: 'ネットワークエラーが発生しました' });
+  }
+  if (!response.ok) {
+    return err({ kind: 'server', message: `HTTP ${response.status}`, statusCode: response.status });
+  }
+  const data = (await response.json()) as { id: number; name: string }[];
+  const map = new Map<number, string>();
+  for (const item of data) map.set(item.id, item.name);
+  return ok(map);
 };
 
 export const fetchSystemKills = async (): Promise<Result<readonly SystemKills[], ApiError>> => {

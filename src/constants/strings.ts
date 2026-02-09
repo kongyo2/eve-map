@@ -103,9 +103,60 @@ export const STRINGS = {
   nearestTradeHub: '最寄りトレードハブ',
   routeToHub: 'ハブへルート',
 
+  // Stations
+  stationServices: 'ステーションサービス',
+  noStations: 'ステーションなし',
+  serviceMarket: 'マーケット',
+  serviceCloning: 'クローニング',
+  serviceRepair: '修理',
+  serviceReprocessing: '再処理',
+  serviceFitting: 'フィッティング',
+  serviceLaboratory: '研究所',
+  serviceFactory: '工場',
+  serviceMissions: 'ミッション',
+
+  // Killmails
+  recentKills: '最近のキルメール',
+  noRecentKills: '最近のキルはありません',
+  iskValue: 'ISK',
+  attackerLabel: '攻撃者',
+  minutesAgo: '分前',
+  hoursAgo: '時間前',
+  daysAgo: '日前',
+  soloKill: 'ソロ',
+
+  // Heatmap modes
+  heatmapKills: 'キル表示',
+  heatmapJumps: 'トラフィック',
+  heatmapOff: 'オフ',
+
+  // Sovereignty
+  sovToggle: '主権表示',
+  sovActive: '主権表示中',
+  sovInfo: '主権情報',
+  controlledBy: '支配者',
+  noSov: '主権なし',
+  allianceLabel: 'アライアンス',
+  corporationLabel: 'コーポレーション',
+  factionLabel: 'ファクション',
+
+  // Nearby search
+  nearbySearch: '周辺検索',
+  maxJumpsLabel: '最大ジャンプ数',
+  withinJumps: 'ジャンプ以内',
+  hasStations: 'ステーションあり',
+  systemsFound: '件のシステム',
+  distance: '距離',
+
+  // Route comparison
+  compareRoutes: 'ルート比較',
+  calculateAllRoutes: '全ルート計算',
+  activeRoute: 'アクティブルート',
+
   // Errors
   networkError: 'ネットワークエラーが発生しました',
   loadError: 'データの読み込みに失敗しました',
   routeError: 'ルート計算に失敗しました',
   noRoute: 'ルートが見つかりません',
+  serviceUnavailable: 'サービス利用不可',
 } as const;

@@ -31,6 +31,10 @@ export const RouteBar = ({ onLayout }: { onLayout?: (height: number) => void }) 
     swap,
     preference,
     setPreference,
+    compareMode,
+    alternateRoutes,
+    calculateAllRoutes,
+    disableCompare,
   } = useRoute();
   const getSystem = useUniverseStore((s) => s.getSystem);
   const avoidedSystemIds = useMapStore((s) => s.avoidedSystemIds);
@@ -171,6 +175,14 @@ export const RouteBar = ({ onLayout }: { onLayout?: (height: number) => void }) 
                 </Text>
               </TouchableOpacity>
             ))}
+            <TouchableOpacity
+              style={[styles.prefChip, compareMode && styles.compareChipActive]}
+              onPress={compareMode ? disableCompare : calculateAllRoutes}
+            >
+              <Text style={[styles.prefText, compareMode && styles.compareTextActive]}>
+                {STRINGS.compareRoutes}
+              </Text>
+            </TouchableOpacity>
           </View>
           {securityBreakdown && (
             <View style={styles.breakdownRow}>
@@ -194,6 +206,37 @@ export const RouteBar = ({ onLayout }: { onLayout?: (height: number) => void }) 
               )}
             </View>
           )}
+        </View>
+      )}
+
+      {/* Alternate routes summary */}
+      {compareMode && alternateRoutes.length > 0 && (
+        <View style={styles.compareRow}>
+          {alternateRoutes.map((alt) => (
+            <View key={alt.preference} style={styles.altRouteChip}>
+              <View
+                style={[
+                  styles.altRouteDot,
+                  {
+                    backgroundColor:
+                      alt.preference === 'secure'
+                        ? '#44dddd'
+                        : alt.preference === 'insecure'
+                          ? '#dd44dd'
+                          : '#44dddd',
+                  },
+                ]}
+              />
+              <Text style={styles.altRouteText}>
+                {alt.preference === 'shortest'
+                  ? STRINGS.shortest
+                  : alt.preference === 'secure'
+                    ? STRINGS.secure
+                    : STRINGS.insecure}
+                : {alt.systemIds.length - 1}J
+              </Text>
+            </View>
+          ))}
         </View>
       )}
 
@@ -435,5 +478,39 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     letterSpacing: 0.5,
     textDecorationLine: 'underline',
+  },
+  compareChipActive: {
+    borderColor: '#dd44dd',
+    backgroundColor: '#dd44dd20',
+  },
+  compareTextActive: {
+    color: '#dd44dd',
+  },
+  compareRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+    gap: 8,
+  },
+  altRouteChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 2,
+    borderWidth: 1,
+    borderColor: `${theme.border}88`,
+  },
+  altRouteDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  altRouteText: {
+    color: theme.textSecondary,
+    fontSize: 10,
+    fontWeight: '400',
+    letterSpacing: 0.5,
   },
 });

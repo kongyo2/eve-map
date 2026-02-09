@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { useUniverseData } from '../src/hooks/useUniverseData';
 import { useAutoRoute } from '../src/hooks/useAutoRoute';
 import { useHeatmapData } from '../src/hooks/useHeatmapData';
+import { useSovData } from '../src/hooks/useSovData';
 import { useUniverseStore } from '../src/store/universeStore';
 import { useMapStore } from '../src/store/mapStore';
 import { MapCanvas, type MapCanvasRef } from '../src/components/map/MapCanvas';
@@ -21,14 +22,18 @@ export default function MapScreen() {
   const detailLevel = useMapStore((s) => s.detailLevel);
   const routeOriginId = useMapStore((s) => s.routeOriginId);
   const routeDestinationId = useMapStore((s) => s.routeDestinationId);
-  const heatmapActive = useMapStore((s) => s.heatmapActive);
-  const toggleHeatmap = useMapStore((s) => s.toggleHeatmap);
+  const heatmapMode = useMapStore((s) => s.heatmapMode);
+  const cycleHeatmapMode = useMapStore((s) => s.cycleHeatmapMode);
+  const sovMode = useMapStore((s) => s.sovMode);
+  const toggleSov = useMapStore((s) => s.toggleSov);
+  const selectedSystemId = useMapStore((s) => s.selectedSystemId);
   const mapRef = useRef<MapCanvasRef>(null);
   const [showHints, setShowHints] = useState(true);
   const [routeBarHeight, setRouteBarHeight] = useState(0);
 
   useAutoRoute();
   useHeatmapData();
+  useSovData();
 
   const handleSearch = useCallback(() => {
     router.push('/search');
@@ -47,8 +52,18 @@ export default function MapScreen() {
   }, []);
 
   const handleToggleHeatmap = useCallback(() => {
-    toggleHeatmap();
-  }, [toggleHeatmap]);
+    cycleHeatmapMode();
+  }, [cycleHeatmapMode]);
+
+  const handleToggleSov = useCallback(() => {
+    toggleSov();
+  }, [toggleSov]);
+
+  const handleNearbySearch = useCallback(() => {
+    if (selectedSystemId) {
+      router.push(`/nearby?origin=${selectedSystemId}`);
+    }
+  }, [router, selectedSystemId]);
 
   if (loadingPhase !== 'ready') {
     return (
@@ -69,13 +84,16 @@ export default function MapScreen() {
       <MapControls
         detailLevel={detailLevel}
         systemCount={systems.size}
-        heatmapActive={heatmapActive}
+        heatmapMode={heatmapMode}
+        sovActive={sovMode}
         bottomOffset={showRouteBar ? routeBarHeight : 0}
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
         onReset={handleReset}
         onSearch={handleSearch}
         onToggleHeatmap={handleToggleHeatmap}
+        onToggleSov={handleToggleSov}
+        onNearbySearch={selectedSystemId ? handleNearbySearch : undefined}
       />
       {showRouteBar && <RouteBar onLayout={setRouteBarHeight} />}
       <SystemSheet />

@@ -14,10 +14,22 @@ import { useRoute } from '../../src/hooks/useRoute';
 import { theme, securityColor } from '../../src/constants/colors';
 import { STRINGS } from '../../src/constants/strings';
 import { formatSecurity, classifySecurity } from '../../src/utils/security';
-import { fetchSystemKills, fetchSystemJumps } from '../../src/api/esi';
+import { fetchSystemKills, fetchSystemJumps, fetchStations } from '../../src/api/esi';
+import { fetchRecentKills } from '../../src/api/evekill';
 import { findNearestTradeHub } from '../../src/utils/bfs';
 import { MAP } from '../../src/constants/map';
-import type { SystemKills, SystemJumps, RoutePreference } from '../../src/types/universe';
+import {
+  getServiceName,
+  getServiceCategory,
+  CATEGORY_COLORS,
+} from '../../src/constants/stationServices';
+import type {
+  SystemKills,
+  SystemJumps,
+  Station,
+  Killmail,
+  RoutePreference,
+} from '../../src/types/universe';
 
 const securityLabel = (sec: number): string => {
   const level = classifySecurity(sec);
@@ -29,6 +41,23 @@ const securityLabel = (sec: number): string => {
     case 'nullsec':
       return STRINGS.nullsec;
   }
+};
+
+const formatTimeAgo = (isoTime: string): string => {
+  const diff = Date.now() - new Date(isoTime).getTime();
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 60) return `${minutes}${STRINGS.minutesAgo}`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}${STRINGS.hoursAgo}`;
+  const days = Math.floor(hours / 24);
+  return `${days}${STRINGS.daysAgo}`;
+};
+
+const formatIsk = (value: number): string => {
+  if (value >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
+  if (value >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
+  if (value >= 1e3) return `${(value / 1e3).toFixed(0)}K`;
+  return value.toFixed(0);
 };
 
 export default function SystemDetailScreen() {
@@ -43,6 +72,8 @@ export default function SystemDetailScreen() {
     useRoute();
   const setRouteOrigin = useMapStore((s) => s.setRouteOrigin);
   const setRouteDestination = useMapStore((s) => s.setRouteDestination);
+  const sovMap = useMapStore((s) => s.sovMap);
+  const allianceNames = useMapStore((s) => s.allianceNames);
 
   const system = getSystem(systemId);
   const region = system ? getRegion(system.regionId) : undefined;
@@ -70,9 +101,18 @@ export default function SystemDetailScreen() {
     });
   }, [connectedIds, getSystem]);
 
+  // Stats
   const [kills, setKills] = useState<SystemKills | null>(null);
   const [jumps, setJumps] = useState<SystemJumps | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
+
+  // Station data
+  const [stationData, setStationData] = useState<readonly Station[]>([]);
+  const [stationsLoading, setStationsLoading] = useState(true);
+
+  // Killmail data
+  const [killmails, setKillmails] = useState<readonly Killmail[]>([]);
+  const [killmailsLoading, setKillmailsLoading] = useState(true);
 
   useEffect(() => {
     const loadStats = async () => {
@@ -100,6 +140,35 @@ export default function SystemDetailScreen() {
     loadStats();
   }, [systemId]);
 
+  // Load station data
+  useEffect(() => {
+    if (!system || system.stationIds.length === 0) {
+      setStationData([]);
+      setStationsLoading(false);
+      return;
+    }
+    setStationsLoading(true);
+    fetchStations(system.stationIds).then((result) => {
+      result.match(
+        (data) => setStationData(data),
+        () => setStationData([]),
+      );
+      setStationsLoading(false);
+    });
+  }, [system]);
+
+  // Load killmail data
+  useEffect(() => {
+    setKillmailsLoading(true);
+    fetchRecentKills(systemId, 10).then((result) => {
+      result.match(
+        (data) => setKillmails(data),
+        () => setKillmails([]),
+      );
+      setKillmailsLoading(false);
+    });
+  }, [systemId]);
+
   const handleOrigin = useCallback(() => {
     setRouteOrigin(systemId);
   }, [setRouteOrigin, systemId]);
@@ -117,6 +186,7 @@ export default function SystemDetailScreen() {
   }
 
   const secColor = securityColor(system.securityStatus);
+  const sov = sovMap.get(systemId);
 
   return (
     <>
@@ -148,6 +218,31 @@ export default function SystemDetailScreen() {
             </Text>
           </View>
         </View>
+
+        {/* Sovereignty info */}
+        {sov && (sov.allianceId || sov.factionId) && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{STRINGS.sovInfo}</Text>
+            <View style={styles.sovCard}>
+              {sov.allianceId && (
+                <View style={styles.sovRow}>
+                  <Text style={styles.sovLabel}>{STRINGS.allianceLabel}</Text>
+                  <Text style={styles.sovValue}>
+                    {allianceNames.get(sov.allianceId) ?? `ID: ${sov.allianceId}`}
+                  </Text>
+                </View>
+              )}
+              {sov.factionId && (
+                <View style={styles.sovRow}>
+                  <Text style={styles.sovLabel}>{STRINGS.factionLabel}</Text>
+                  <Text style={styles.sovValue}>
+                    {allianceNames.get(sov.factionId) ?? `ID: ${sov.factionId}`}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+        )}
 
         {/* Route actions */}
         <View style={styles.section}>
@@ -253,6 +348,70 @@ export default function SystemDetailScreen() {
           </View>
         </View>
 
+        {/* Station services */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>
+            {STRINGS.stationServices} ({system.stationIds.length})
+          </Text>
+          {stationsLoading ? (
+            <ActivityIndicator size="small" color={theme.accent} />
+          ) : stationData.length === 0 ? (
+            <Text style={styles.emptyText}>{STRINGS.noStations}</Text>
+          ) : (
+            stationData.map((station) => (
+              <View key={station.stationId} style={styles.stationCard}>
+                <Text style={styles.stationName}>{station.name}</Text>
+                <View style={styles.serviceList}>
+                  {station.services.map((svc) => {
+                    const cat = getServiceCategory(svc);
+                    return (
+                      <View
+                        key={svc}
+                        style={[styles.serviceBadge, { borderColor: CATEGORY_COLORS[cat] }]}
+                      >
+                        <Text style={[styles.serviceText, { color: CATEGORY_COLORS[cat] }]}>
+                          {getServiceName(svc)}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+            ))
+          )}
+        </View>
+
+        {/* Recent killmails */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{STRINGS.recentKills}</Text>
+          {killmailsLoading ? (
+            <ActivityIndicator size="small" color={theme.accent} />
+          ) : killmails.length === 0 ? (
+            <Text style={styles.emptyText}>{STRINGS.noRecentKills}</Text>
+          ) : (
+            killmails.map((km) => (
+              <View key={km.killmailId} style={styles.killmailItem}>
+                <View style={styles.killmailLeft}>
+                  <Text style={styles.killmailShip}>{km.victimShipName}</Text>
+                  <Text style={styles.killmailVictim}>
+                    {km.victimName} [{km.victimCorp}]
+                  </Text>
+                </View>
+                <View style={styles.killmailRight}>
+                  <Text style={styles.killmailIsk}>
+                    {formatIsk(km.totalValue)} {STRINGS.iskValue}
+                  </Text>
+                  <View style={styles.killmailMeta}>
+                    <Text style={styles.killmailTime}>{formatTimeAgo(km.killTime)}</Text>
+                    {km.isSolo && <Text style={styles.killmailSolo}>{STRINGS.soloKill}</Text>}
+                    <Text style={styles.killmailAttackers}>x{km.attackerCount}</Text>
+                  </View>
+                </View>
+              </View>
+            ))
+          )}
+        </View>
+
         {/* Nearest Trade Hub */}
         {tradeHubResult && tradeHubSystem && (
           <View style={styles.section}>
@@ -345,19 +504,9 @@ const statStyles = StyleSheet.create({
 });
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.background,
-  },
-  content: {
-    paddingBottom: 40,
-  },
-  errorText: {
-    color: theme.error,
-    fontSize: 14,
-    textAlign: 'center',
-    marginTop: 40,
-  },
+  container: { flex: 1, backgroundColor: theme.background },
+  content: { paddingBottom: 40 },
+  errorText: { color: theme.error, fontSize: 14, textAlign: 'center', marginTop: 40 },
   headerCard: {
     marginHorizontal: 16,
     marginTop: 16,
@@ -367,10 +516,7 @@ const styles = StyleSheet.create({
     borderColor: theme.border,
     padding: 16,
   },
-  headerTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
+  headerTop: { flexDirection: 'row', alignItems: 'center' },
   secBadgeLarge: {
     borderWidth: 1,
     borderRadius: 4,
@@ -380,14 +526,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 14,
   },
-  secValueLarge: {
-    fontSize: 18,
-    fontWeight: '300',
-    letterSpacing: 1,
-  },
-  headerInfo: {
-    flex: 1,
-  },
+  secValueLarge: { fontSize: 18, fontWeight: '300', letterSpacing: 1 },
+  headerInfo: { flex: 1 },
   systemNameLarge: {
     color: theme.text,
     fontSize: 22,
@@ -395,27 +535,10 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     marginBottom: 2,
   },
-  secClassLabel: {
-    fontSize: 11,
-    fontWeight: '400',
-    letterSpacing: 2,
-  },
-  breadcrumbRow: {
-    marginTop: 12,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: theme.border,
-  },
-  breadcrumbText: {
-    color: theme.textDim,
-    fontSize: 11,
-    fontWeight: '300',
-    letterSpacing: 0.5,
-  },
-  section: {
-    marginHorizontal: 16,
-    marginTop: 20,
-  },
+  secClassLabel: { fontSize: 11, fontWeight: '400', letterSpacing: 2 },
+  breadcrumbRow: { marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: theme.border },
+  breadcrumbText: { color: theme.textDim, fontSize: 11, fontWeight: '300', letterSpacing: 0.5 },
+  section: { marginHorizontal: 16, marginTop: 20 },
   sectionTitle: {
     color: theme.textSecondary,
     fontSize: 11,
@@ -424,10 +547,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     textTransform: 'uppercase',
   },
-  routeActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
+  emptyText: { color: theme.textDim, fontSize: 12, fontWeight: '300', letterSpacing: 0.5 },
+  routeActions: { flexDirection: 'row', gap: 8 },
   routeButton: {
     flex: 1,
     flexDirection: 'row',
@@ -439,32 +560,17 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     gap: 6,
   },
-  routeButtonActive: {
-    borderColor: theme.accent,
-    backgroundColor: `${theme.accent}15`,
-  },
-  routeDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
+  routeButtonActive: { borderColor: theme.accent, backgroundColor: `${theme.accent}15` },
+  routeDot: { width: 6, height: 6, borderRadius: 3 },
   routeButtonText: {
     color: theme.textSecondary,
     fontSize: 12,
     fontWeight: '400',
     letterSpacing: 0.5,
   },
-  routeButtonTextActive: {
-    color: theme.accent,
-  },
-  routeCalcSection: {
-    marginTop: 12,
-  },
-  prefRow: {
-    flexDirection: 'row',
-    gap: 6,
-    marginBottom: 10,
-  },
+  routeButtonTextActive: { color: theme.accent },
+  routeCalcSection: { marginTop: 12 },
+  prefRow: { flexDirection: 'row', gap: 6, marginBottom: 10 },
   prefChip: {
     paddingHorizontal: 14,
     paddingVertical: 6,
@@ -472,31 +578,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.border,
   },
-  prefChipActive: {
-    borderColor: theme.accent,
-    backgroundColor: `${theme.accent}20`,
-  },
-  prefText: {
-    color: theme.textDim,
-    fontSize: 11,
-    fontWeight: '400',
-    letterSpacing: 1,
-  },
-  prefTextActive: {
-    color: theme.accent,
-  },
+  prefChipActive: { borderColor: theme.accent, backgroundColor: `${theme.accent}20` },
+  prefText: { color: theme.textDim, fontSize: 11, fontWeight: '400', letterSpacing: 1 },
+  prefTextActive: { color: theme.accent },
   calcButton: {
     backgroundColor: theme.accent,
     paddingVertical: 12,
     borderRadius: 3,
     alignItems: 'center',
   },
-  calcButtonText: {
-    color: theme.background,
-    fontSize: 13,
-    fontWeight: '500',
-    letterSpacing: 1,
-  },
+  calcButtonText: { color: theme.background, fontSize: 13, fontWeight: '500', letterSpacing: 1 },
   routeResult: {
     color: theme.route,
     fontSize: 13,
@@ -505,10 +596,56 @@ const styles = StyleSheet.create({
     marginTop: 10,
     textAlign: 'center',
   },
-  statsGrid: {
-    flexDirection: 'row',
-    gap: 8,
+  statsGrid: { flexDirection: 'row', gap: 8 },
+  // Station styles
+  stationCard: {
+    backgroundColor: theme.surface,
+    borderRadius: 3,
+    borderWidth: 1,
+    borderColor: theme.border,
+    padding: 12,
+    marginBottom: 8,
   },
+  stationName: {
+    color: theme.text,
+    fontSize: 13,
+    fontWeight: '300',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  serviceList: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
+  serviceBadge: { borderWidth: 1, borderRadius: 2, paddingHorizontal: 6, paddingVertical: 2 },
+  serviceText: { fontSize: 9, fontWeight: '400', letterSpacing: 0.5 },
+  // Killmail styles
+  killmailItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: `${theme.border}66`,
+  },
+  killmailLeft: { flex: 1, marginRight: 10 },
+  killmailShip: { color: theme.text, fontSize: 13, fontWeight: '300', letterSpacing: 0.5 },
+  killmailVictim: { color: theme.textDim, fontSize: 10, fontWeight: '300', marginTop: 2 },
+  killmailRight: { alignItems: 'flex-end' },
+  killmailIsk: { color: theme.route, fontSize: 12, fontWeight: '400', letterSpacing: 0.5 },
+  killmailMeta: { flexDirection: 'row', gap: 6, marginTop: 2 },
+  killmailTime: { color: theme.textDim, fontSize: 9, fontWeight: '300' },
+  killmailSolo: { color: theme.accent, fontSize: 9, fontWeight: '400' },
+  killmailAttackers: { color: theme.textSecondary, fontSize: 9, fontWeight: '300' },
+  // Sov styles
+  sovCard: {
+    backgroundColor: theme.surface,
+    borderRadius: 3,
+    borderWidth: 1,
+    borderColor: theme.border,
+    padding: 12,
+  },
+  sovRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 },
+  sovLabel: { color: theme.textSecondary, fontSize: 11, fontWeight: '400', letterSpacing: 1 },
+  sovValue: { color: theme.text, fontSize: 12, fontWeight: '300', letterSpacing: 0.5 },
+  // Connected system styles
   connectedItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -516,24 +653,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: `${theme.border}66`,
   },
-  connDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 10,
-  },
-  connName: {
-    flex: 1,
-    color: theme.text,
-    fontSize: 13,
-    fontWeight: '300',
-    letterSpacing: 0.5,
-  },
-  connSec: {
-    fontSize: 11,
-    fontWeight: '500',
-    letterSpacing: 0.5,
-  },
+  connDot: { width: 6, height: 6, borderRadius: 3, marginRight: 10 },
+  connName: { flex: 1, color: theme.text, fontSize: 13, fontWeight: '300', letterSpacing: 0.5 },
+  connSec: { fontSize: 11, fontWeight: '500', letterSpacing: 0.5 },
+  // Trade hub styles
   tradeHubCard: {
     backgroundColor: theme.surface,
     borderRadius: 3,
@@ -541,11 +664,7 @@ const styles = StyleSheet.create({
     borderColor: theme.border,
     padding: 14,
   },
-  tradeHubInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
+  tradeHubInfo: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
   tradeHubName: {
     flex: 1,
     color: theme.text,
@@ -554,22 +673,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginLeft: 4,
   },
-  tradeHubDistance: {
-    color: theme.route,
-    fontSize: 13,
-    fontWeight: '400',
-    letterSpacing: 0.5,
-  },
+  tradeHubDistance: { color: theme.route, fontSize: 13, fontWeight: '400', letterSpacing: 0.5 },
   routeToHubButton: {
     backgroundColor: theme.accent,
     paddingVertical: 10,
     borderRadius: 3,
     alignItems: 'center',
   },
-  routeToHubText: {
-    color: theme.background,
-    fontSize: 12,
-    fontWeight: '500',
-    letterSpacing: 1,
-  },
+  routeToHubText: { color: theme.background, fontSize: 12, fontWeight: '500', letterSpacing: 1 },
 });

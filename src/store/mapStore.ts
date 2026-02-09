@@ -1,5 +1,12 @@
 import { create } from 'zustand';
-import type { DetailLevel, RoutePreference, SystemKills, SystemJumps } from '../types/universe';
+import type {
+  DetailLevel,
+  RoutePreference,
+  SystemKills,
+  SystemJumps,
+  HeatmapMode,
+  SovData,
+} from '../types/universe';
 
 type MapState = {
   centerX: number;
@@ -17,11 +24,24 @@ type MapState = {
   isCalculatingRoute: boolean;
   routeError: string | null;
 
-  heatmapActive: boolean;
+  heatmapMode: HeatmapMode;
   killsMap: ReadonlyMap<number, SystemKills>;
   jumpsMap: ReadonlyMap<number, SystemJumps>;
+  avgJumps: number;
+
+  sovMode: boolean;
+  sovMap: ReadonlyMap<number, SovData>;
+  allianceNames: ReadonlyMap<number, string>;
 
   avoidedSystemIds: readonly number[];
+
+  nearbySystemIds: readonly number[] | null;
+
+  compareMode: boolean;
+  alternateRoutes: readonly {
+    systemIds: readonly number[];
+    preference: RoutePreference;
+  }[];
 
   selectSystem: (id: number | null) => void;
   setShowSystemSheet: (show: boolean) => void;
@@ -34,11 +54,20 @@ type MapState = {
   setIsCalculatingRoute: (calculating: boolean) => void;
   setRouteError: (error: string | null) => void;
   swapOriginDestination: () => void;
-  toggleHeatmap: () => void;
+  cycleHeatmapMode: () => void;
   setKillsMap: (kills: ReadonlyMap<number, SystemKills>) => void;
   setJumpsMap: (jumps: ReadonlyMap<number, SystemJumps>) => void;
+  setAvgJumps: (avg: number) => void;
+  toggleSov: () => void;
+  setSovMap: (sov: ReadonlyMap<number, SovData>) => void;
+  setAllianceNames: (names: ReadonlyMap<number, string>) => void;
   toggleAvoidSystem: (systemId: number) => void;
   clearAvoidedSystems: () => void;
+  setNearbySystemIds: (ids: readonly number[] | null) => void;
+  setCompareMode: (on: boolean) => void;
+  setAlternateRoutes: (
+    routes: readonly { systemIds: readonly number[]; preference: RoutePreference }[],
+  ) => void;
 };
 
 export const useMapStore = create<MapState>((set, get) => ({
@@ -57,11 +86,21 @@ export const useMapStore = create<MapState>((set, get) => ({
   isCalculatingRoute: false,
   routeError: null,
 
-  heatmapActive: false,
+  heatmapMode: 'off',
   killsMap: new Map(),
   jumpsMap: new Map(),
+  avgJumps: 0,
+
+  sovMode: false,
+  sovMap: new Map(),
+  allianceNames: new Map(),
 
   avoidedSystemIds: [],
+
+  nearbySystemIds: null,
+
+  compareMode: false,
+  alternateRoutes: [],
 
   selectSystem: (id) => set({ selectedSystemId: id, showSystemSheet: id !== null }),
   setShowSystemSheet: (show) => set({ showSystemSheet: show }),
@@ -75,6 +114,8 @@ export const useMapStore = create<MapState>((set, get) => ({
       routeDestinationId: null,
       isCalculatingRoute: false,
       routeError: null,
+      compareMode: false,
+      alternateRoutes: [],
     }),
   setRouteOrigin: (id) => set({ routeOriginId: id }),
   setRouteDestination: (id) => set({ routeDestinationId: id }),
@@ -85,9 +126,23 @@ export const useMapStore = create<MapState>((set, get) => ({
     const { routeOriginId, routeDestinationId } = get();
     set({ routeOriginId: routeDestinationId, routeDestinationId: routeOriginId });
   },
-  toggleHeatmap: () => set((s) => ({ heatmapActive: !s.heatmapActive })),
+  cycleHeatmapMode: () =>
+    set((s) => {
+      const modes: HeatmapMode[] = ['off', 'kills', 'jumps'];
+      const idx = modes.indexOf(s.heatmapMode);
+      const next = modes[(idx + 1) % modes.length];
+      return { heatmapMode: next, sovMode: next !== 'off' ? false : s.sovMode };
+    }),
   setKillsMap: (kills) => set({ killsMap: kills }),
   setJumpsMap: (jumps) => set({ jumpsMap: jumps }),
+  setAvgJumps: (avg) => set({ avgJumps: avg }),
+  toggleSov: () =>
+    set((s) => ({
+      sovMode: !s.sovMode,
+      heatmapMode: !s.sovMode ? 'off' : s.heatmapMode,
+    })),
+  setSovMap: (sov) => set({ sovMap: sov }),
+  setAllianceNames: (names) => set({ allianceNames: names }),
   toggleAvoidSystem: (systemId) =>
     set((s) => ({
       avoidedSystemIds: s.avoidedSystemIds.includes(systemId)
@@ -95,4 +150,7 @@ export const useMapStore = create<MapState>((set, get) => ({
         : [...s.avoidedSystemIds, systemId],
     })),
   clearAvoidedSystems: () => set({ avoidedSystemIds: [] }),
+  setNearbySystemIds: (ids) => set({ nearbySystemIds: ids }),
+  setCompareMode: (on) => set({ compareMode: on }),
+  setAlternateRoutes: (routes) => set({ alternateRoutes: routes }),
 }));

@@ -37,6 +37,26 @@ export const dangerRadius = (shipKills: number): number => {
   return 0.12;
 };
 
+export const trafficColor = (jumps: number, avgJumps: number): string => {
+  if (jumps === 0) return '#1a2040';
+  const ratio = avgJumps > 0 ? jumps / avgJumps : 0;
+  if (ratio < 0.5) return '#2a4060';
+  if (ratio < 1.0) return '#4a8050';
+  if (ratio < 1.5) return '#6a8050';
+  if (ratio < 2.5) return '#CCCC00';
+  if (ratio < 4.0) return '#FF9900';
+  return '#FF4400';
+};
+
+export const trafficRadius = (jumps: number, avgJumps: number): number => {
+  if (jumps === 0) return 0.05;
+  const ratio = avgJumps > 0 ? jumps / avgJumps : 0;
+  if (ratio < 1.0) return 0.05;
+  if (ratio < 2.5) return 0.07;
+  if (ratio < 4.0) return 0.09;
+  return 0.12;
+};
+
 export const theme = {
   background: '#0a0e1a',
   surface: '#141929',

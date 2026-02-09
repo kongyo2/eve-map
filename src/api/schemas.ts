@@ -66,6 +66,47 @@ export const EsiSystemJumpsSchema = z.object({
   ship_jumps: z.number(),
 });
 
+export const EsiStationSchema = z.object({
+  station_id: z.number(),
+  name: z.string(),
+  system_id: z.number(),
+  type_id: z.number(),
+  owner: z.number(),
+  services: z.array(z.string()),
+  reprocessing_efficiency: z.number().optional(),
+  max_dockable_ship_volume: z.number().optional(),
+});
+
+export const EsiSovSystemSchema = z.object({
+  system_id: z.number(),
+  alliance_id: z.number().optional(),
+  corporation_id: z.number().optional(),
+  faction_id: z.number().optional(),
+});
+
+export const EsiNameSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  category: z.string(),
+});
+
+export const EveKillKillmailSchema = z.object({
+  killmail_id: z.number(),
+  total_value: z.number(),
+  system_id: z.number(),
+  kill_time: z.string(),
+  attackerCount: z.number(),
+  is_npc: z.boolean(),
+  is_solo: z.boolean(),
+  victim: z.object({
+    ship_name: z.record(z.string(), z.string()).optional(),
+    ship_group_name: z.record(z.string(), z.string()).optional(),
+    character_name: z.string(),
+    corporation_name: z.string(),
+    alliance_name: z.string(),
+  }),
+});
+
 export const EsiRouteSchema = z.array(z.number());
 
 export const EsiSystemIdsSchema = z.array(z.number());
@@ -75,3 +116,6 @@ export type EsiSystemResponse = z.infer<typeof EsiSystemSchema>;
 export type EsiConstellationResponse = z.infer<typeof EsiConstellationSchema>;
 export type EsiRegionResponse = z.infer<typeof EsiRegionSchema>;
 export type EsiStargateResponse = z.infer<typeof EsiStargateSchema>;
+export type EsiStationResponse = z.infer<typeof EsiStationSchema>;
+export type EsiSovSystemResponse = z.infer<typeof EsiSovSystemSchema>;
+export type EveKillKillmailResponse = z.infer<typeof EveKillKillmailSchema>;

@@ -6,13 +6,14 @@ import type { SystemKills, SystemJumps } from '../types/universe';
 const REFRESH_INTERVAL = 5 * 60 * 1000;
 
 export const useHeatmapData = () => {
-  const heatmapActive = useMapStore((s) => s.heatmapActive);
+  const heatmapMode = useMapStore((s) => s.heatmapMode);
   const setKillsMap = useMapStore((s) => s.setKillsMap);
   const setJumpsMap = useMapStore((s) => s.setJumpsMap);
+  const setAvgJumps = useMapStore((s) => s.setAvgJumps);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    if (!heatmapActive) {
+    if (heatmapMode === 'off') {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
@@ -36,8 +37,15 @@ export const useHeatmapData = () => {
       jumpsResult.match(
         (data) => {
           const map = new Map<number, SystemJumps>();
-          for (const j of data) map.set(j.systemId, j);
+          let total = 0;
+          for (const j of data) {
+            map.set(j.systemId, j);
+            total += j.shipJumps;
+          }
           setJumpsMap(map);
+          if (data.length > 0) {
+            setAvgJumps(total / data.length);
+          }
         },
         () => undefined,
       );
@@ -52,5 +60,5 @@ export const useHeatmapData = () => {
         intervalRef.current = null;
       }
     };
-  }, [heatmapActive, setKillsMap, setJumpsMap]);
+  }, [heatmapMode, setKillsMap, setJumpsMap, setAvgJumps]);
 };

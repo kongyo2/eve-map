@@ -59,6 +59,33 @@ export type SystemJumps = {
   readonly shipJumps: number;
 };
 
+export type Station = {
+  readonly stationId: number;
+  readonly name: string;
+  readonly systemId: number;
+  readonly services: readonly string[];
+};
+
+export type Killmail = {
+  readonly killmailId: number;
+  readonly totalValue: number;
+  readonly killTime: string;
+  readonly attackerCount: number;
+  readonly isSolo: boolean;
+  readonly victimShipName: string;
+  readonly victimName: string;
+  readonly victimCorp: string;
+};
+
+export type SovData = {
+  readonly systemId: number;
+  readonly allianceId?: number;
+  readonly corporationId?: number;
+  readonly factionId?: number;
+};
+
+export type HeatmapMode = 'off' | 'kills' | 'jumps';
+
 export type SecurityLevel = 'highsec' | 'lowsec' | 'nullsec';
 
 export type RoutePreference = 'shortest' | 'secure' | 'insecure';
