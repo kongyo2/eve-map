@@ -99,11 +99,27 @@ async function main() {
   console.log('Parsing solar systems...');
   const rawSystems = readJsonl('mapSolarSystems.jsonl');
   const kSpaceSystemIds = new Set();
-  const systems = [];
 
   for (const s of rawSystems) {
+    if (kSpaceRegionIds.has(s.regionID)) kSpaceSystemIds.add(s._key);
+  }
+
+  // --- NPC Stations (map solarSystemID → stationIds) ---
+  console.log('Parsing NPC stations...');
+  const rawStations = readJsonl('npcStations.jsonl');
+  const stationsBySystem = new Map();
+
+  for (const st of rawStations) {
+    if (!kSpaceSystemIds.has(st.solarSystemID)) continue;
+    if (!stationsBySystem.has(st.solarSystemID)) stationsBySystem.set(st.solarSystemID, []);
+    stationsBySystem.get(st.solarSystemID).push(st._key);
+  }
+  const totalStations = [...stationsBySystem.values()].reduce((sum, ids) => sum + ids.length, 0);
+  console.log(`  ${totalStations} stations in ${stationsBySystem.size} systems`);
+
+  const systems = [];
+  for (const s of rawSystems) {
     if (!kSpaceRegionIds.has(s.regionID)) continue;
-    kSpaceSystemIds.add(s._key);
 
     const x = s.position?.x || 0;
     const z = s.position?.z || 0;
@@ -123,7 +139,7 @@ async function main() {
           z: s.position?.z || 0,
         },
         stargateIds: s.stargateIDs || [],
-        stationIds: s.stationIDs || [],
+        stationIds: stationsBySystem.get(s._key) || [],
         nx: x / SCALE_FACTOR,
         nz: z / SCALE_FACTOR,
       },
