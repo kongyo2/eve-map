@@ -15,6 +15,8 @@ import { theme, securityColor } from '../../src/constants/colors';
 import { STRINGS } from '../../src/constants/strings';
 import { formatSecurity, classifySecurity } from '../../src/utils/security';
 import { fetchSystemKills, fetchSystemJumps } from '../../src/api/esi';
+import { findNearestTradeHub } from '../../src/utils/bfs';
+import { MAP } from '../../src/constants/map';
 import type { SystemKills, SystemJumps, RoutePreference } from '../../src/types/universe';
 
 const securityLabel = (sec: number): string => {
@@ -46,6 +48,15 @@ export default function SystemDetailScreen() {
   const region = system ? getRegion(system.regionId) : undefined;
   const constellation = system ? getConstellation(system.constellationId) : undefined;
   const connectedIds = getConnectedSystems(systemId);
+
+  const adjacencyList = useUniverseStore((s) => s.adjacencyList);
+
+  const tradeHubResult = useMemo(
+    () => findNearestTradeHub(systemId, adjacencyList, MAP.TRADE_HUBS as unknown as number[]),
+    [systemId, adjacencyList],
+  );
+
+  const tradeHubSystem = tradeHubResult ? getSystem(tradeHubResult.hubId) : undefined;
 
   const sortedConnectedIds = useMemo(() => {
     return [...connectedIds].sort((a, b) => {
@@ -241,6 +252,37 @@ export default function SystemDetailScreen() {
             <StatBox label={STRINGS.shipJumps} value={jumps?.shipJumps ?? 0} color={theme.accent} />
           </View>
         </View>
+
+        {/* Nearest Trade Hub */}
+        {tradeHubResult && tradeHubSystem && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{STRINGS.nearestTradeHub}</Text>
+            <View style={styles.tradeHubCard}>
+              <View style={styles.tradeHubInfo}>
+                <View
+                  style={[
+                    styles.connDot,
+                    { backgroundColor: securityColor(tradeHubSystem.securityStatus) },
+                  ]}
+                />
+                <Text style={styles.tradeHubName}>{tradeHubSystem.name}</Text>
+                <Text style={styles.tradeHubDistance}>
+                  {tradeHubResult.distance} {STRINGS.routeJumps}
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={styles.routeToHubButton}
+                onPress={() => {
+                  setRouteOrigin(systemId);
+                  setRouteDestination(tradeHubResult.hubId);
+                  router.back();
+                }}
+              >
+                <Text style={styles.routeToHubText}>{STRINGS.routeToHub}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
 
         {/* Connected systems */}
         <View style={styles.section}>
@@ -491,5 +533,43 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '500',
     letterSpacing: 0.5,
+  },
+  tradeHubCard: {
+    backgroundColor: theme.surface,
+    borderRadius: 3,
+    borderWidth: 1,
+    borderColor: theme.border,
+    padding: 14,
+  },
+  tradeHubInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  tradeHubName: {
+    flex: 1,
+    color: theme.text,
+    fontSize: 14,
+    fontWeight: '300',
+    letterSpacing: 0.5,
+    marginLeft: 4,
+  },
+  tradeHubDistance: {
+    color: theme.route,
+    fontSize: 13,
+    fontWeight: '400',
+    letterSpacing: 0.5,
+  },
+  routeToHubButton: {
+    backgroundColor: theme.accent,
+    paddingVertical: 10,
+    borderRadius: 3,
+    alignItems: 'center',
+  },
+  routeToHubText: {
+    color: theme.background,
+    fontSize: 12,
+    fontWeight: '500',
+    letterSpacing: 1,
   },
 });

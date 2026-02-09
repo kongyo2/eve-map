@@ -7,6 +7,7 @@ export const useAutoRoute = () => {
   const originId = useMapStore((s) => s.routeOriginId);
   const destinationId = useMapStore((s) => s.routeDestinationId);
   const preference = useMapStore((s) => s.routePreference);
+  const avoidedSystemIds = useMapStore((s) => s.avoidedSystemIds);
   const setRoute = useMapStore((s) => s.setRoute);
   const setIsCalculatingRoute = useMapStore((s) => s.setIsCalculatingRoute);
   const setRouteError = useMapStore((s) => s.setRouteError);
@@ -18,7 +19,8 @@ export const useAutoRoute = () => {
     setIsCalculatingRoute(true);
     setRouteError(null);
 
-    calculateRoute(originId, destinationId, preference).then((result) => {
+    const avoid = avoidedSystemIds.length > 0 ? avoidedSystemIds : undefined;
+    calculateRoute(originId, destinationId, preference, avoid).then((result) => {
       if (abortRef.current) return;
       result.match(
         (route) => setRoute(route),
@@ -29,5 +31,5 @@ export const useAutoRoute = () => {
     return () => {
       abortRef.current = true;
     };
-  }, [originId, destinationId, preference, setRoute, setIsCalculatingRoute, setRouteError]);
+  }, [originId, destinationId, preference, avoidedSystemIds, setRoute, setIsCalculatingRoute, setRouteError]);
 };

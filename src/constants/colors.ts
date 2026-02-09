@@ -21,6 +21,22 @@ export const securityColorAlpha = (sec: number, alpha: number): string => {
   return `${hex}${alphaHex}`;
 };
 
+export const dangerColor = (shipKills: number): string => {
+  if (shipKills === 0) return '#334466';
+  if (shipKills <= 2) return '#668844';
+  if (shipKills <= 5) return '#CCCC00';
+  if (shipKills <= 10) return '#FF9900';
+  if (shipKills <= 20) return '#FF4400';
+  return '#FF0000';
+};
+
+export const dangerRadius = (shipKills: number): number => {
+  if (shipKills === 0) return 0.05;
+  if (shipKills <= 5) return 0.07;
+  if (shipKills <= 20) return 0.09;
+  return 0.12;
+};
+
 export const theme = {
   background: '#0a0e1a',
   surface: '#141929',
@@ -39,5 +55,6 @@ export const theme = {
   highsec: '#00EF47',
   lowsec: '#D77700',
   nullsec: '#F00000',
+  danger: '#FF4444',
   border: '#2a3050',
 } as const;

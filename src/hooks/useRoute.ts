@@ -7,6 +7,7 @@ export const useRoute = () => {
   const routeOriginId = useMapStore((s) => s.routeOriginId);
   const routeDestinationId = useMapStore((s) => s.routeDestinationId);
   const routePreference = useMapStore((s) => s.routePreference);
+  const avoidedSystemIds = useMapStore((s) => s.avoidedSystemIds);
   const routeSystemIds = useMapStore((s) => s.routeSystemIds);
   const isCalculatingRoute = useMapStore((s) => s.isCalculatingRoute);
   const routeError = useMapStore((s) => s.routeError);
@@ -21,12 +22,13 @@ export const useRoute = () => {
     if (!routeOriginId || !routeDestinationId) return;
     setIsCalculatingRoute(true);
     setRouteError(null);
-    const result = await calculateRoute(routeOriginId, routeDestinationId, routePreference);
+    const avoid = avoidedSystemIds.length > 0 ? avoidedSystemIds : undefined;
+    const result = await calculateRoute(routeOriginId, routeDestinationId, routePreference, avoid);
     result.match(
       (route) => setRoute(route),
       () => setRouteError(STRINGS.routeError),
     );
-  }, [routeOriginId, routeDestinationId, routePreference, setRoute, setIsCalculatingRoute, setRouteError]);
+  }, [routeOriginId, routeDestinationId, routePreference, avoidedSystemIds, setRoute, setIsCalculatingRoute, setRouteError]);
 
   return {
     originId: routeOriginId,
@@ -35,6 +37,7 @@ export const useRoute = () => {
     route: routeSystemIds,
     isCalculating: isCalculatingRoute,
     error: routeError,
+    avoidedCount: avoidedSystemIds.length,
     calculate,
     clear: clearRoute,
     setPreference: setRoutePreference,

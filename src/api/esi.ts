@@ -149,11 +149,14 @@ export const calculateRoute = async (
   origin: number,
   destination: number,
   preference: RoutePreference,
+  avoid?: readonly number[],
 ): Promise<Result<readonly number[], ApiError>> => {
-  return fetchJson(
-    esiUrl(`/route/${origin}/${destination}/`, { flag: preference }),
-    EsiRouteSchema,
-  );
+  let url = esiUrl(`/route/${origin}/${destination}/`, { flag: preference });
+  if (avoid && avoid.length > 0) {
+    const avoidParams = avoid.map((id) => `avoid=${id}`).join('&');
+    url += `&${avoidParams}`;
+  }
+  return fetchJson(url, EsiRouteSchema);
 };
 
 export const fetchSystemKills = async (): Promise<Result<readonly SystemKills[], ApiError>> => {

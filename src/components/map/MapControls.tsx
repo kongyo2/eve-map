@@ -6,10 +6,12 @@ import type { DetailLevel } from '../../types/universe';
 type Props = {
   detailLevel: DetailLevel;
   systemCount: number;
+  heatmapActive: boolean;
   onZoomIn: () => void;
   onZoomOut: () => void;
   onReset: () => void;
   onSearch: () => void;
+  onToggleHeatmap: () => void;
 };
 
 const detailLevelLabel = (level: DetailLevel): string => {
@@ -26,10 +28,12 @@ const detailLevelLabel = (level: DetailLevel): string => {
 export const MapControls = ({
   detailLevel,
   systemCount,
+  heatmapActive,
   onZoomIn,
   onZoomOut,
   onReset,
   onSearch,
+  onToggleHeatmap,
 }: Props) => {
   return (
     <>
@@ -54,6 +58,17 @@ export const MapControls = ({
       {/* Reset view button */}
       <TouchableOpacity style={styles.resetButton} onPress={onReset} activeOpacity={0.7}>
         <Text style={styles.resetText}>{STRINGS.resetView}</Text>
+      </TouchableOpacity>
+
+      {/* Heatmap toggle */}
+      <TouchableOpacity
+        style={[styles.heatmapButton, heatmapActive && styles.heatmapButtonActive]}
+        onPress={onToggleHeatmap}
+        activeOpacity={0.7}
+      >
+        <Text style={[styles.heatmapText, heatmapActive && styles.heatmapTextActive]}>
+          {heatmapActive ? STRINGS.heatmapActive : STRINGS.heatmapToggle}
+        </Text>
       </TouchableOpacity>
 
       {/* Search FAB */}
@@ -155,6 +170,32 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 12,
+  },
+  heatmapButton: {
+    position: 'absolute',
+    top: 150,
+    right: 16,
+    backgroundColor: `${theme.surface}cc`,
+    borderRadius: 2,
+    borderWidth: 1,
+    borderColor: theme.border,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heatmapButtonActive: {
+    borderColor: theme.danger,
+    backgroundColor: `${theme.danger}30`,
+  },
+  heatmapText: {
+    color: theme.textSecondary,
+    fontSize: 10,
+    fontWeight: '400',
+    letterSpacing: 0.5,
+  },
+  heatmapTextActive: {
+    color: theme.danger,
   },
   searchIcon: {
     color: theme.background,

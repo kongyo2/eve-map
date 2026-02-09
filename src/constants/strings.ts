@@ -89,6 +89,20 @@ export const STRINGS = {
   gestureHintDrag: 'ドラッグ: マップ移動',
   gestureHintDismiss: 'タップして閉じる',
 
+  // Heatmap
+  heatmapToggle: '危険表示',
+  heatmapActive: '危険表示中',
+
+  // Avoidance
+  avoidSystem: '回避',
+  avoidSystemActive: '回避中',
+  avoidedCount: '回避システム',
+  clearAvoided: 'クリア',
+
+  // Trade hub
+  nearestTradeHub: '最寄りトレードハブ',
+  routeToHub: 'ハブへルート',
+
   // Errors
   networkError: 'ネットワークエラーが発生しました',
   loadError: 'データの読み込みに失敗しました',

@@ -30,6 +30,8 @@ export const SystemSheet = () => {
   const setShowSystemSheet = useMapStore((s) => s.setShowSystemSheet);
   const setRouteOrigin = useMapStore((s) => s.setRouteOrigin);
   const setRouteDestination = useMapStore((s) => s.setRouteDestination);
+  const toggleAvoidSystem = useMapStore((s) => s.toggleAvoidSystem);
+  const avoidedSystemIds = useMapStore((s) => s.avoidedSystemIds);
   const getSystem = useUniverseStore((s) => s.getSystem);
   const getRegion = useUniverseStore((s) => s.getRegion);
   const getConstellation = useUniverseStore((s) => s.getConstellation);
@@ -37,6 +39,7 @@ export const SystemSheet = () => {
   const system = selectedSystemId ? getSystem(selectedSystemId) : undefined;
   const region = system ? getRegion(system.regionId) : undefined;
   const constellation = system ? getConstellation(system.constellationId) : undefined;
+  const isAvoided = system ? avoidedSystemIds.includes(system.id) : false;
 
   useEffect(() => {
     Animated.spring(slideAnim, {
@@ -114,6 +117,15 @@ export const SystemSheet = () => {
           }}
         >
           <Text style={styles.actionText}>{STRINGS.setAsDestination}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.actionButton, isAvoided && styles.actionButtonDanger]}
+          onPress={() => toggleAvoidSystem(system.id)}
+        >
+          <Text style={[styles.actionText, isAvoided && styles.actionTextDanger]}>
+            {isAvoided ? STRINGS.avoidSystemActive : STRINGS.avoidSystem}
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -253,5 +265,12 @@ const styles = StyleSheet.create({
   },
   actionTextAccent: {
     color: theme.accent,
+  },
+  actionButtonDanger: {
+    borderColor: theme.danger,
+    backgroundColor: `${theme.danger}15`,
+  },
+  actionTextDanger: {
+    color: theme.danger,
   },
 });

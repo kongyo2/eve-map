@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { DetailLevel, RoutePreference } from '../types/universe';
+import type { DetailLevel, RoutePreference, SystemKills, SystemJumps } from '../types/universe';
 
 type MapState = {
   centerX: number;
@@ -17,6 +17,12 @@ type MapState = {
   isCalculatingRoute: boolean;
   routeError: string | null;
 
+  heatmapActive: boolean;
+  killsMap: ReadonlyMap<number, SystemKills>;
+  jumpsMap: ReadonlyMap<number, SystemJumps>;
+
+  avoidedSystemIds: readonly number[];
+
   selectSystem: (id: number | null) => void;
   setShowSystemSheet: (show: boolean) => void;
   setDetailLevel: (level: DetailLevel) => void;
@@ -28,6 +34,11 @@ type MapState = {
   setIsCalculatingRoute: (calculating: boolean) => void;
   setRouteError: (error: string | null) => void;
   swapOriginDestination: () => void;
+  toggleHeatmap: () => void;
+  setKillsMap: (kills: ReadonlyMap<number, SystemKills>) => void;
+  setJumpsMap: (jumps: ReadonlyMap<number, SystemJumps>) => void;
+  toggleAvoidSystem: (systemId: number) => void;
+  clearAvoidedSystems: () => void;
 };
 
 export const useMapStore = create<MapState>((set, get) => ({
@@ -45,6 +56,12 @@ export const useMapStore = create<MapState>((set, get) => ({
   routePreference: 'shortest',
   isCalculatingRoute: false,
   routeError: null,
+
+  heatmapActive: false,
+  killsMap: new Map(),
+  jumpsMap: new Map(),
+
+  avoidedSystemIds: [],
 
   selectSystem: (id) => set({ selectedSystemId: id, showSystemSheet: id !== null }),
   setShowSystemSheet: (show) => set({ showSystemSheet: show }),
@@ -67,4 +84,14 @@ export const useMapStore = create<MapState>((set, get) => ({
     const { routeOriginId, routeDestinationId } = get();
     set({ routeOriginId: routeDestinationId, routeDestinationId: routeOriginId });
   },
+  toggleHeatmap: () => set((s) => ({ heatmapActive: !s.heatmapActive })),
+  setKillsMap: (kills) => set({ killsMap: kills }),
+  setJumpsMap: (jumps) => set({ jumpsMap: jumps }),
+  toggleAvoidSystem: (systemId) =>
+    set((s) => ({
+      avoidedSystemIds: s.avoidedSystemIds.includes(systemId)
+        ? s.avoidedSystemIds.filter((id) => id !== systemId)
+        : [...s.avoidedSystemIds, systemId],
+    })),
+  clearAvoidedSystems: () => set({ avoidedSystemIds: [] }),
 }));

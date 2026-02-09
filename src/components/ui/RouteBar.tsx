@@ -14,6 +14,7 @@ import { STRINGS } from '../../constants/strings';
 import { classifySecurity } from '../../utils/security';
 import { formatSecurity } from '../../utils/security';
 import { useUniverseStore } from '../../store/universeStore';
+import { useMapStore } from '../../store/mapStore';
 import { useRoute } from '../../hooks/useRoute';
 import type { RoutePreference } from '../../types/universe';
 
@@ -21,6 +22,8 @@ export const RouteBar = () => {
   const { route, originId, destinationId, isCalculating, error, clear, swap, preference, setPreference } =
     useRoute();
   const getSystem = useUniverseStore((s) => s.getSystem);
+  const avoidedSystemIds = useMapStore((s) => s.avoidedSystemIds);
+  const clearAvoidedSystems = useMapStore((s) => s.clearAvoidedSystems);
   const originName = originId ? getSystem(originId)?.name : null;
   const destName = destinationId ? getSystem(destinationId)?.name : null;
   const [expanded, setExpanded] = useState(false);
@@ -177,6 +180,18 @@ export const RouteBar = () => {
               )}
             </View>
           )}
+        </View>
+      )}
+
+      {/* Avoided systems count */}
+      {avoidedSystemIds.length > 0 && (
+        <View style={styles.avoidedRow}>
+          <Text style={styles.avoidedText}>
+            {STRINGS.avoidedCount}: {avoidedSystemIds.length}
+          </Text>
+          <TouchableOpacity onPress={clearAvoidedSystems}>
+            <Text style={styles.clearAvoidedText}>{STRINGS.clearAvoided}</Text>
+          </TouchableOpacity>
         </View>
       )}
     </View>
@@ -384,5 +399,27 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '500',
     letterSpacing: 0.5,
+  },
+  avoidedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderTopWidth: 1,
+    borderTopColor: `${theme.border}44`,
+  },
+  avoidedText: {
+    color: theme.danger,
+    fontSize: 10,
+    fontWeight: '400',
+    letterSpacing: 0.5,
+  },
+  clearAvoidedText: {
+    color: theme.textDim,
+    fontSize: 10,
+    fontWeight: '400',
+    letterSpacing: 0.5,
+    textDecorationLine: 'underline',
   },
 });

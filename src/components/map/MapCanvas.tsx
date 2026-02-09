@@ -21,7 +21,7 @@ import {
 } from 'react-native-reanimated';
 import { useUniverseStore } from '../../store/universeStore';
 import { useMapStore } from '../../store/mapStore';
-import { securityColor, theme } from '../../constants/colors';
+import { securityColor, dangerColor, dangerRadius, theme } from '../../constants/colors';
 import { classifySecurity } from '../../utils/security';
 import { MAP } from '../../constants/map';
 import { screenToWorld, distanceSquared } from '../../utils/coordinates';
@@ -49,6 +49,9 @@ export const MapCanvas = forwardRef<MapCanvasRef>((_, ref) => {
   const routeDestinationId = useMapStore((s) => s.routeDestinationId);
   const selectedSystemId = useMapStore((s) => s.selectedSystemId);
   const selectSystem = useMapStore((s) => s.selectSystem);
+  const heatmapActive = useMapStore((s) => s.heatmapActive);
+  const killsMap = useMapStore((s) => s.killsMap);
+  const avoidedSystemIds = useMapStore((s) => s.avoidedSystemIds);
 
   // Shared values for pan/zoom
   const panX = useSharedValue(width / 2);
@@ -148,6 +151,25 @@ export const MapCanvas = forwardRef<MapCanvasRef>((_, ref) => {
     if (!routeSystemIds) return new Set<number>();
     return new Set(routeSystemIds);
   }, [routeSystemIds]);
+
+  // Avoided system set for O(1) lookup
+  const avoidedSet = useMemo(() => new Set(avoidedSystemIds), [avoidedSystemIds]);
+
+  // Batched avoided X-marker path
+  const avoidedXPath = useMemo(() => {
+    if (avoidedSet.size === 0) return null;
+    const path = Skia.Path.Make();
+    const s = 0.12;
+    for (const id of avoidedSet) {
+      const sys = systems.get(id);
+      if (!sys) continue;
+      path.moveTo(sys.nx - s, sys.nz - s);
+      path.lineTo(sys.nx + s, sys.nz + s);
+      path.moveTo(sys.nx + s, sys.nz - s);
+      path.lineTo(sys.nx - s, sys.nz + s);
+    }
+    return path;
+  }, [avoidedSet, systems]);
 
   // Origin/destination system data for markers
   const originSystem = useMemo(
@@ -323,6 +345,15 @@ export const MapCanvas = forwardRef<MapCanvasRef>((_, ref) => {
     return paint;
   }, []);
 
+  const avoidedPaint = useMemo(() => {
+    const paint = Skia.Paint();
+    paint.setColor(Skia.Color(theme.danger));
+    paint.setStrokeWidth(0.03);
+    paint.setStyle(PaintStyle.Stroke);
+    paint.setAntiAlias(true);
+    return paint;
+  }, []);
+
   return (
     <View style={styles.container}>
       <GestureDetector gesture={composedGesture}>
@@ -345,10 +376,24 @@ export const MapCanvas = forwardRef<MapCanvasRef>((_, ref) => {
               const isSelected = sys.id === selectedSystemId;
               const isOnRoute = routeSystemSet.has(sys.id);
               const isHub = (MAP.TRADE_HUBS as readonly number[]).includes(sys.id);
-              const radius = isHub ? 0.15 : isSelected ? 0.12 : isOnRoute ? 0.1 : 0.06;
-              const color = isSelected
-                ? theme.selectedHighlight
-                : securityColor(sys.securityStatus);
+
+              let radius: number;
+              let color: string;
+
+              if (isSelected) {
+                color = theme.selectedHighlight;
+                radius = 0.12;
+              } else if (heatmapActive) {
+                const kills = killsMap.get(sys.id);
+                const shipKills = kills?.shipKills ?? 0;
+                color = dangerColor(shipKills);
+                radius = dangerRadius(shipKills);
+                if (isHub) radius = Math.max(radius, 0.15);
+                if (isOnRoute) radius = Math.max(radius, 0.1);
+              } else {
+                color = securityColor(sys.securityStatus);
+                radius = isHub ? 0.15 : isOnRoute ? 0.1 : 0.06;
+              }
 
               return <Circle key={sys.id} cx={sys.nx} cy={sys.nz} r={radius} color={color} />;
             })}
@@ -368,6 +413,9 @@ export const MapCanvas = forwardRef<MapCanvasRef>((_, ref) => {
                 <Circle cx={destSystem.nx} cy={destSystem.nz} r={0.12} color={theme.route} />
               </>
             )}
+
+            {/* Avoided system X markers */}
+            {avoidedXPath && <Path path={avoidedXPath} paint={avoidedPaint} />}
 
             {/* Region labels */}
             {regionCenters.map((rc) => (
