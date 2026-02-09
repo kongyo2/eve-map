@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme, securityColor } from '../../constants/colors';
 import { STRINGS } from '../../constants/strings';
 import { formatSecurity, classifySecurity } from '../../utils/security';
@@ -24,6 +25,8 @@ const securityLabel = (sec: number): string => {
 
 export const SystemSheet = () => {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const sheetHeight = SHEET_HEIGHT + insets.bottom;
   const slideAnim = useRef(new Animated.Value(SHEET_HEIGHT)).current;
   const selectedSystemId = useMapStore((s) => s.selectedSystemId);
   const showSystemSheet = useMapStore((s) => s.showSystemSheet);
@@ -43,19 +46,21 @@ export const SystemSheet = () => {
 
   useEffect(() => {
     Animated.spring(slideAnim, {
-      toValue: showSystemSheet && system ? 0 : SHEET_HEIGHT,
+      toValue: showSystemSheet && system ? 0 : sheetHeight,
       useNativeDriver: true,
       damping: 20,
       stiffness: 200,
     }).start();
-  }, [showSystemSheet, system, slideAnim]);
+  }, [showSystemSheet, system, slideAnim, sheetHeight]);
 
   if (!system) return null;
 
   const secColor = securityColor(system.securityStatus);
 
   return (
-    <Animated.View style={[styles.container, { transform: [{ translateY: slideAnim }] }]}>
+    <Animated.View
+      style={[styles.container, { height: sheetHeight, paddingBottom: insets.bottom, transform: [{ translateY: slideAnim }] }]}
+    >
       {/* Handle bar */}
       <View style={styles.handleContainer}>
         <View style={styles.handle} />
@@ -148,7 +153,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: SHEET_HEIGHT,
     backgroundColor: `${theme.surface}f5`,
     borderTopWidth: 1,
     borderTopColor: theme.border,

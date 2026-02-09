@@ -8,6 +8,7 @@ import {
   ScrollView,
   Dimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '../../constants/colors';
 import { securityColor } from '../../constants/colors';
 import { STRINGS } from '../../constants/strings';
@@ -19,6 +20,7 @@ import { useRoute } from '../../hooks/useRoute';
 import type { RoutePreference } from '../../types/universe';
 
 export const RouteBar = () => {
+  const insets = useSafeAreaInsets();
   const { route, originId, destinationId, isCalculating, error, clear, swap, preference, setPreference } =
     useRoute();
   const getSystem = useUniverseStore((s) => s.getSystem);
@@ -50,7 +52,7 @@ export const RouteBar = () => {
   const jumpCount = hasRoute ? route.length - 1 : 0;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingBottom: insets.bottom }]}>
       {/* Expandable step list */}
       {expanded && hasRoute && (
         <View style={styles.stepListContainer}>

@@ -1,4 +1,5 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '../../constants/colors';
 import { STRINGS } from '../../constants/strings';
 import type { DetailLevel } from '../../types/universe';
@@ -35,6 +36,8 @@ export const MapControls = ({
   onSearch,
   onToggleHeatmap,
 }: Props) => {
+  const insets = useSafeAreaInsets();
+
   return (
     <>
       {/* Top-left info badge */}
@@ -72,7 +75,11 @@ export const MapControls = ({
       </TouchableOpacity>
 
       {/* Search FAB */}
-      <TouchableOpacity style={styles.searchFab} onPress={onSearch} activeOpacity={0.8}>
+      <TouchableOpacity
+        style={[styles.searchFab, { bottom: 32 + insets.bottom }]}
+        onPress={onSearch}
+        activeOpacity={0.8}
+      >
         <Text style={styles.searchIcon}>&#x2315;</Text>
       </TouchableOpacity>
     </>
@@ -157,7 +164,6 @@ const styles = StyleSheet.create({
   },
   searchFab: {
     position: 'absolute',
-    bottom: 32,
     right: 16,
     width: 52,
     height: 52,
