@@ -31,5 +31,13 @@ export const useAutoRoute = () => {
     return () => {
       abortRef.current = true;
     };
-  }, [originId, destinationId, preference, avoidedSystemIds, setRoute, setIsCalculatingRoute, setRouteError]);
+  }, [
+    originId,
+    destinationId,
+    preference,
+    avoidedSystemIds,
+    setRoute,
+    setIsCalculatingRoute,
+    setRouteError,
+  ]);
 };

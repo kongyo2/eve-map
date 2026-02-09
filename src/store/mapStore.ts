@@ -66,7 +66,8 @@ export const useMapStore = create<MapState>((set, get) => ({
   selectSystem: (id) => set({ selectedSystemId: id, showSystemSheet: id !== null }),
   setShowSystemSheet: (show) => set({ showSystemSheet: show }),
   setDetailLevel: (level) => set({ detailLevel: level }),
-  setRoute: (systemIds) => set({ routeSystemIds: systemIds, isCalculatingRoute: false, routeError: null }),
+  setRoute: (systemIds) =>
+    set({ routeSystemIds: systemIds, isCalculatingRoute: false, routeError: null }),
   clearRoute: () =>
     set({
       routeSystemIds: null,

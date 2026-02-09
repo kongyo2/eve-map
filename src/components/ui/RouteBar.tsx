@@ -21,8 +21,17 @@ import type { RoutePreference } from '../../types/universe';
 
 export const RouteBar = ({ onLayout }: { onLayout?: (height: number) => void }) => {
   const insets = useSafeAreaInsets();
-  const { route, originId, destinationId, isCalculating, error, clear, swap, preference, setPreference } =
-    useRoute();
+  const {
+    route,
+    originId,
+    destinationId,
+    isCalculating,
+    error,
+    clear,
+    swap,
+    preference,
+    setPreference,
+  } = useRoute();
   const getSystem = useUniverseStore((s) => s.getSystem);
   const avoidedSystemIds = useMapStore((s) => s.avoidedSystemIds);
   const clearAvoidedSystems = useMapStore((s) => s.clearAvoidedSystems);

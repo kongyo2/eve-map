@@ -62,39 +62,43 @@ export const MapCanvas = forwardRef<MapCanvasRef>((_, ref) => {
   const prevScale = useSharedValue<number>(MAP.INITIAL_ZOOM);
 
   // Imperative zoom/reset methods
-  useImperativeHandle(ref, () => ({
-    zoomIn: () => {
-      cancelAnimation(panX);
-      cancelAnimation(panY);
-      const focalX = width / 2;
-      const focalY = height / 2;
-      const worldX = (focalX - panX.value) / scaleVal.value;
-      const worldY = (focalY - panY.value) / scaleVal.value;
-      const newScale = Math.min(MAP.MAX_ZOOM, scaleVal.value * 1.5);
-      scaleVal.value = withTiming(newScale, { duration: 200 });
-      panX.value = withTiming(focalX - worldX * newScale, { duration: 200 });
-      panY.value = withTiming(focalY - worldY * newScale, { duration: 200 });
-    },
-    zoomOut: () => {
-      cancelAnimation(panX);
-      cancelAnimation(panY);
-      const focalX = width / 2;
-      const focalY = height / 2;
-      const worldX = (focalX - panX.value) / scaleVal.value;
-      const worldY = (focalY - panY.value) / scaleVal.value;
-      const newScale = Math.max(MAP.MIN_ZOOM, scaleVal.value / 1.5);
-      scaleVal.value = withTiming(newScale, { duration: 200 });
-      panX.value = withTiming(focalX - worldX * newScale, { duration: 200 });
-      panY.value = withTiming(focalY - worldY * newScale, { duration: 200 });
-    },
-    resetView: () => {
-      cancelAnimation(panX);
-      cancelAnimation(panY);
-      scaleVal.value = withTiming(MAP.INITIAL_ZOOM, { duration: 300 });
-      panX.value = withTiming(width / 2, { duration: 300 });
-      panY.value = withTiming(height / 2, { duration: 300 });
-    },
-  }), [width, height, panX, panY, scaleVal]);
+  useImperativeHandle(
+    ref,
+    () => ({
+      zoomIn: () => {
+        cancelAnimation(panX);
+        cancelAnimation(panY);
+        const focalX = width / 2;
+        const focalY = height / 2;
+        const worldX = (focalX - panX.value) / scaleVal.value;
+        const worldY = (focalY - panY.value) / scaleVal.value;
+        const newScale = Math.min(MAP.MAX_ZOOM, scaleVal.value * 1.5);
+        scaleVal.value = withTiming(newScale, { duration: 200 });
+        panX.value = withTiming(focalX - worldX * newScale, { duration: 200 });
+        panY.value = withTiming(focalY - worldY * newScale, { duration: 200 });
+      },
+      zoomOut: () => {
+        cancelAnimation(panX);
+        cancelAnimation(panY);
+        const focalX = width / 2;
+        const focalY = height / 2;
+        const worldX = (focalX - panX.value) / scaleVal.value;
+        const worldY = (focalY - panY.value) / scaleVal.value;
+        const newScale = Math.max(MAP.MIN_ZOOM, scaleVal.value / 1.5);
+        scaleVal.value = withTiming(newScale, { duration: 200 });
+        panX.value = withTiming(focalX - worldX * newScale, { duration: 200 });
+        panY.value = withTiming(focalY - worldY * newScale, { duration: 200 });
+      },
+      resetView: () => {
+        cancelAnimation(panX);
+        cancelAnimation(panY);
+        scaleVal.value = withTiming(MAP.INITIAL_ZOOM, { duration: 300 });
+        panX.value = withTiming(width / 2, { duration: 300 });
+        panY.value = withTiming(height / 2, { duration: 300 });
+      },
+    }),
+    [width, height, panX, panY, scaleVal],
+  );
 
   // Derived transform for Skia Group
   const transform = useDerivedValue(() => [
@@ -135,9 +139,7 @@ export const MapCanvas = forwardRef<MapCanvasRef>((_, ref) => {
 
       const secLevel = classifySecurity(toSys.securityStatus);
       const targetPath =
-        secLevel === 'highsec' ? highsecPath :
-        secLevel === 'lowsec' ? lowsecPath :
-        nullsecPath;
+        secLevel === 'highsec' ? highsecPath : secLevel === 'lowsec' ? lowsecPath : nullsecPath;
 
       targetPath.moveTo(fromSys.nx, fromSys.nz);
       targetPath.lineTo(toSys.nx, toSys.nz);

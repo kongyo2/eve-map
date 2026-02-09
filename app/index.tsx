@@ -25,6 +25,7 @@ export default function MapScreen() {
   const toggleHeatmap = useMapStore((s) => s.toggleHeatmap);
   const mapRef = useRef<MapCanvasRef>(null);
   const [showHints, setShowHints] = useState(true);
+  const [routeBarHeight, setRouteBarHeight] = useState(0);
 
   useAutoRoute();
   useHeatmapData();
@@ -60,7 +61,6 @@ export default function MapScreen() {
     );
   }
 
-  const [routeBarHeight, setRouteBarHeight] = useState(0);
   const showRouteBar = !!(routeOriginId || routeDestinationId);
 
   return (

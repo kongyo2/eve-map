@@ -59,7 +59,14 @@ export const SystemSheet = () => {
 
   return (
     <Animated.View
-      style={[styles.container, { height: sheetHeight, paddingBottom: insets.bottom, transform: [{ translateY: slideAnim }] }]}
+      style={[
+        styles.container,
+        {
+          height: sheetHeight,
+          paddingBottom: insets.bottom,
+          transform: [{ translateY: slideAnim }],
+        },
+      ]}
     >
       {/* Handle bar */}
       <View style={styles.handleContainer}>

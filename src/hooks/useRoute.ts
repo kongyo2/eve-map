@@ -28,7 +28,15 @@ export const useRoute = () => {
       (route) => setRoute(route),
       () => setRouteError(STRINGS.routeError),
     );
-  }, [routeOriginId, routeDestinationId, routePreference, avoidedSystemIds, setRoute, setIsCalculatingRoute, setRouteError]);
+  }, [
+    routeOriginId,
+    routeDestinationId,
+    routePreference,
+    avoidedSystemIds,
+    setRoute,
+    setIsCalculatingRoute,
+    setRouteError,
+  ]);
 
   return {
     originId: routeOriginId,
