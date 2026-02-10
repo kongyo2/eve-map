@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { useUniverseStore } from '../../src/store/universeStore';
@@ -18,7 +19,7 @@ import { fetchSystemKills, fetchSystemJumps, fetchStations } from '../../src/api
 import { fetchRecentKills } from '../../src/api/evekill';
 import { fetchMultipleMarketStats } from '../../src/api/evetycoon';
 import { findNearestTradeHub } from '../../src/utils/bfs';
-import { MAP, MARKET_ITEMS } from '../../src/constants/map';
+import { MAP, MARKET_ITEMS, GLOBAL_MARKET_REGION, eveImageUrl } from '../../src/constants/map';
 import {
   getServiceName,
   getServiceCategory,
@@ -183,12 +184,22 @@ export default function SystemDetailScreen() {
       return;
     }
     setMarketLoading(true);
-    const typeIds = MARKET_ITEMS.map((item) => item.typeId);
-    fetchMultipleMarketStats(regionId, typeIds).then((result) => {
-      result.match(
-        (data) => setMarketData(data),
-        () => setMarketData(new Map()),
-      );
+    const regionalIds = MARKET_ITEMS.filter((i) => !i.global).map((i) => i.typeId);
+    const globalIds = MARKET_ITEMS.filter((i) => i.global).map((i) => i.typeId);
+
+    const fetches = [fetchMultipleMarketStats(regionId, regionalIds)];
+    if (globalIds.length > 0) {
+      fetches.push(fetchMultipleMarketStats(GLOBAL_MARKET_REGION, globalIds));
+    }
+
+    Promise.all(fetches).then((results) => {
+      const merged = new Map<number, MarketStats>();
+      for (const result of results) {
+        if (result.isOk()) {
+          for (const [k, v] of result.value) merged.set(k, v);
+        }
+      }
+      setMarketData(merged);
       setMarketLoading(false);
     });
   }, [regionId]);
@@ -391,6 +402,10 @@ export default function SystemDetailScreen() {
                 return (
                   <View key={item.typeId} style={styles.marketItem}>
                     <View style={styles.marketItemHeader}>
+                      <Image
+                        source={{ uri: eveImageUrl(item.typeId, 64) }}
+                        style={styles.marketIcon}
+                      />
                       <Text style={styles.marketItemName}>{item.name}</Text>
                       {spread !== null && (
                         <Text style={styles.marketSpread}>
@@ -685,11 +700,18 @@ const styles = StyleSheet.create({
   },
   marketItemHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
   },
+  marketIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 2,
+    marginRight: 8,
+    backgroundColor: theme.surface,
+  },
   marketItemName: {
+    flex: 1,
     color: theme.text,
     fontSize: 13,
     fontWeight: '400',

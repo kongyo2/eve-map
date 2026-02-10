@@ -48,12 +48,22 @@ export const MAP = {
   ] as readonly number[],
 } as const;
 
+// Global market region (PLEX etc.)
+export const GLOBAL_MARKET_REGION = 19000001;
+
 // Key market items to display
 export const MARKET_ITEMS = [
-  { typeId: 44992, name: 'PLEX' },
-  { typeId: 34, name: 'トリタニウム' },
-  { typeId: 35, name: 'パイライト' },
-  { typeId: 36, name: 'メキサロン' },
-  { typeId: 38, name: 'ノキシウム' },
-  { typeId: 40, name: 'メガサイト' },
+  { typeId: 44992, name: 'PLEX', global: true },
+  { typeId: 40519, name: 'スキルエクストラクター', global: false },
+  { typeId: 40520, name: '大型スキルインジェクター', global: false },
+  { typeId: 45635, name: '小型スキルインジェクター', global: false },
+  { typeId: 46375, name: 'デイリー・アルファ・インジェクター', global: false },
+  { typeId: 34, name: 'トリタニウム', global: false },
+  { typeId: 35, name: 'パイライト', global: false },
+  { typeId: 36, name: 'メキサロン', global: false },
+  { typeId: 38, name: 'ノキシウム', global: false },
+  { typeId: 40, name: 'メガサイト', global: false },
 ] as const;
+
+export const eveImageUrl = (typeId: number, size: number = 64): string =>
+  `https://images.evetech.net/types/${typeId}/icon?size=${size}`;
