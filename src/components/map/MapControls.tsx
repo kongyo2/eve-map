@@ -17,6 +17,7 @@ type Props = {
   onToggleHeatmap: () => void;
   onToggleSov: () => void;
   onNearbySearch?: () => void;
+  onLandmarkSearch?: () => void;
 };
 
 const detailLevelLabel = (level: DetailLevel): string => {
@@ -54,6 +55,7 @@ export const MapControls = ({
   onToggleHeatmap,
   onToggleSov,
   onNearbySearch,
+  onLandmarkSearch,
 }: Props) => {
   const insets = useSafeAreaInsets();
   const heatmapOn = heatmapMode !== 'off';
@@ -117,6 +119,17 @@ export const MapControls = ({
           activeOpacity={0.7}
         >
           <Text style={styles.overlayText}>{STRINGS.nearbySearch}</Text>
+        </TouchableOpacity>
+      )}
+
+      {/* Landmark search button */}
+      {onLandmarkSearch && (
+        <TouchableOpacity
+          style={[styles.overlayButton, styles.landmarkButton]}
+          onPress={onLandmarkSearch}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.overlayText}>{STRINGS.landmarkSearch}</Text>
         </TouchableOpacity>
       )}
 
@@ -248,6 +261,9 @@ const styles = StyleSheet.create({
   },
   nearbyButton: {
     top: 222,
+  },
+  landmarkButton: {
+    top: 258,
   },
   searchFab: {
     position: 'absolute',

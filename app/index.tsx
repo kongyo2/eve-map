@@ -65,6 +65,11 @@ export default function MapScreen() {
     }
   }, [router, selectedSystemId]);
 
+  const handleLandmarkSearch = useCallback(() => {
+    const origin = selectedSystemId ?? '';
+    router.push(`/landmark?origin=${origin}`);
+  }, [router, selectedSystemId]);
+
   if (loadingPhase !== 'ready') {
     return (
       <LoadingScreen
@@ -94,6 +99,7 @@ export default function MapScreen() {
         onToggleHeatmap={handleToggleHeatmap}
         onToggleSov={handleToggleSov}
         onNearbySearch={selectedSystemId ? handleNearbySearch : undefined}
+        onLandmarkSearch={handleLandmarkSearch}
       />
       {showRouteBar && <RouteBar onLayout={setRouteBarHeight} />}
       <SystemSheet />

@@ -102,6 +102,8 @@ export const STRINGS = {
   // Trade hub
   nearestTradeHub: '最寄りトレードハブ',
   routeToHub: 'ハブへルート',
+  primaryHub: 'メインハブ',
+  secondaryHub: 'サブハブ',
 
   // Stations
   stationServices: 'ステーションサービス',
@@ -125,6 +127,13 @@ export const STRINGS = {
   daysAgo: '日前',
   soloKill: 'ソロ',
 
+  // Battle history
+  battleHistory: '戦闘履歴',
+  noBattles: '最近の戦闘はありません',
+  battleKills: 'キル',
+  battleValue: '総損失額',
+  battleParticipants: '参加者',
+
   // Heatmap modes
   heatmapKills: 'キル表示',
   heatmapJumps: 'トラフィック',
@@ -147,6 +156,12 @@ export const STRINGS = {
   hasStations: 'ステーションあり',
   systemsFound: '件のシステム',
   distance: '距離',
+
+  // Landmarks
+  landmarkSearch: 'ランドマーク',
+  noLandmarks: 'ランドマークが見つかりません',
+  landmarkNearSystem: '最寄りシステム',
+  landmarkLoading: 'ランドマークを読み込み中...',
 
   // Route comparison
   compareRoutes: 'ルート比較',

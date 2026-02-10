@@ -30,23 +30,41 @@ export const MAP = {
   // Culling
   CULL_MARGIN: 50,
 
-  // Trade hub system IDs
+  // Trade hub system IDs (all hubs, primary + secondary)
   TRADE_HUBS: [
-    30000142, // Jita
-    30002187, // Amarr
-    30002659, // Dodixie
-    30002510, // Rens
-    30002053, // Hek
+    30000142, 30002187, 30002659, 30002510, 30002053, 30002791, 30004971, 30004939, 30003504,
   ] as readonly number[],
   // Trade hub region IDs
   TRADE_HUB_REGIONS: [
-    10000002, // The Forge (Jita)
+    10000002, // The Forge (Jita / Perimeter)
     10000043, // Domain (Amarr)
     10000032, // Sinq Laison (Dodixie)
     10000042, // Metropolis (Rens)
     10000030, // Heimatar (Hek)
+    10000064, // Essence (Oursulaert)
+    10000020, // Tash-Murkon (Tash-Murkon Prime)
+    10000069, // Black Rise (Agil)
   ] as readonly number[],
 } as const;
+
+export type TradeHubTier = 'primary' | 'secondary';
+
+export const TRADE_HUB_DATA = [
+  { systemId: 30000142, name: 'Jita', regionId: 10000002, tier: 'primary' as TradeHubTier },
+  { systemId: 30002187, name: 'Amarr', regionId: 10000043, tier: 'primary' as TradeHubTier },
+  { systemId: 30002659, name: 'Dodixie', regionId: 10000032, tier: 'primary' as TradeHubTier },
+  { systemId: 30002510, name: 'Rens', regionId: 10000042, tier: 'primary' as TradeHubTier },
+  { systemId: 30002053, name: 'Hek', regionId: 10000030, tier: 'primary' as TradeHubTier },
+  { systemId: 30002791, name: 'Oursulaert', regionId: 10000064, tier: 'secondary' as TradeHubTier },
+  {
+    systemId: 30004971,
+    name: 'Tash-Murkon Prime',
+    regionId: 10000020,
+    tier: 'secondary' as TradeHubTier,
+  },
+  { systemId: 30004939, name: 'Agil', regionId: 10000069, tier: 'secondary' as TradeHubTier },
+  { systemId: 30003504, name: 'Perimeter', regionId: 10000002, tier: 'secondary' as TradeHubTier },
+] as const;
 
 // Global market region (PLEX etc.)
 export const GLOBAL_MARKET_REGION = 19000001;

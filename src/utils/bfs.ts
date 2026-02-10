@@ -33,6 +33,7 @@ export type TradeHubResult = {
   readonly hubId: number;
   readonly distance: number;
   readonly path: readonly number[];
+  readonly tier?: 'primary' | 'secondary';
 };
 
 export const findNearestTradeHub = (

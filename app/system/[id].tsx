@@ -16,10 +16,16 @@ import { theme, securityColor } from '../../src/constants/colors';
 import { STRINGS } from '../../src/constants/strings';
 import { formatSecurity, classifySecurity } from '../../src/utils/security';
 import { fetchSystemKills, fetchSystemJumps, fetchStations } from '../../src/api/esi';
-import { fetchRecentKills } from '../../src/api/evekill';
+import { fetchRecentKills, fetchSystemBattles } from '../../src/api/evekill';
 import { fetchMultipleMarketStats } from '../../src/api/evetycoon';
 import { findNearestTradeHub } from '../../src/utils/bfs';
-import { MAP, MARKET_ITEMS, GLOBAL_MARKET_REGION, eveImageUrl } from '../../src/constants/map';
+import {
+  MAP,
+  MARKET_ITEMS,
+  GLOBAL_MARKET_REGION,
+  eveImageUrl,
+  TRADE_HUB_DATA,
+} from '../../src/constants/map';
 import {
   getServiceName,
   getServiceCategory,
@@ -30,6 +36,7 @@ import type {
   SystemJumps,
   Station,
   Killmail,
+  Battle,
   RoutePreference,
   MarketStats,
 } from '../../src/types/universe';
@@ -85,10 +92,16 @@ export default function SystemDetailScreen() {
 
   const adjacencyList = useUniverseStore((s) => s.adjacencyList);
 
-  const tradeHubResult = useMemo(
-    () => findNearestTradeHub(systemId, adjacencyList, MAP.TRADE_HUBS as unknown as number[]),
-    [systemId, adjacencyList],
-  );
+  const tradeHubResult = useMemo(() => {
+    const result = findNearestTradeHub(
+      systemId,
+      adjacencyList,
+      MAP.TRADE_HUBS as unknown as number[],
+    );
+    if (!result) return null;
+    const hubData = TRADE_HUB_DATA.find((h) => h.systemId === result.hubId);
+    return { ...result, tier: hubData?.tier } as const;
+  }, [systemId, adjacencyList]);
 
   const tradeHubSystem = tradeHubResult ? getSystem(tradeHubResult.hubId) : undefined;
 
@@ -116,6 +129,10 @@ export default function SystemDetailScreen() {
   // Killmail data
   const [killmails, setKillmails] = useState<readonly Killmail[]>([]);
   const [killmailsLoading, setKillmailsLoading] = useState(true);
+
+  // Battle data
+  const [battles, setBattles] = useState<readonly Battle[]>([]);
+  const [battlesLoading, setBattlesLoading] = useState(true);
 
   // Market data
   const [marketData, setMarketData] = useState<ReadonlyMap<number, MarketStats>>(new Map());
@@ -173,6 +190,18 @@ export default function SystemDetailScreen() {
         () => setKillmails([]),
       );
       setKillmailsLoading(false);
+    });
+  }, [systemId]);
+
+  // Load battle data
+  useEffect(() => {
+    setBattlesLoading(true);
+    fetchSystemBattles(systemId).then((result) => {
+      result.match(
+        (data) => setBattles(data),
+        () => setBattles([]),
+      );
+      setBattlesLoading(false);
     });
   }, [systemId]);
 
@@ -504,6 +533,33 @@ export default function SystemDetailScreen() {
           )}
         </View>
 
+        {/* Battle history */}
+        {!battlesLoading && battles.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{STRINGS.battleHistory}</Text>
+            {battles.slice(0, 5).map((battle, idx) => (
+              <View key={battle.battleId ?? idx} style={styles.battleItem}>
+                <View style={styles.battleLeft}>
+                  <Text style={styles.battleTime}>{formatTimeAgo(battle.startTime)}</Text>
+                  {battle.participants !== undefined && (
+                    <Text style={styles.battleParticipants}>
+                      {battle.participants} {STRINGS.battleParticipants}
+                    </Text>
+                  )}
+                </View>
+                <View style={styles.battleRight}>
+                  <Text style={styles.battleKills}>
+                    {battle.totalKills} {STRINGS.battleKills}
+                  </Text>
+                  <Text style={styles.battleValue}>
+                    {formatIsk(battle.totalValue)} {STRINGS.iskValue}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+
         {/* Nearest Trade Hub */}
         {tradeHubResult && tradeHubSystem && (
           <View style={styles.section}>
@@ -517,6 +573,31 @@ export default function SystemDetailScreen() {
                   ]}
                 />
                 <Text style={styles.tradeHubName}>{tradeHubSystem.name}</Text>
+                {tradeHubResult.tier && (
+                  <View
+                    style={[
+                      styles.tierBadge,
+                      {
+                        borderColor:
+                          tradeHubResult.tier === 'primary' ? theme.route : theme.textSecondary,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.tierText,
+                        {
+                          color:
+                            tradeHubResult.tier === 'primary' ? theme.route : theme.textSecondary,
+                        },
+                      ]}
+                    >
+                      {tradeHubResult.tier === 'primary'
+                        ? STRINGS.primaryHub
+                        : STRINGS.secondaryHub}
+                    </Text>
+                  </View>
+                )}
                 <Text style={styles.tradeHubDistance}>
                   {tradeHubResult.distance} {STRINGS.routeJumps}
                 </Text>
@@ -775,6 +856,21 @@ const styles = StyleSheet.create({
   killmailTime: { color: theme.textDim, fontSize: 9, fontWeight: '300' },
   killmailSolo: { color: theme.accent, fontSize: 9, fontWeight: '400' },
   killmailAttackers: { color: theme.textSecondary, fontSize: 9, fontWeight: '300' },
+  // Battle styles
+  battleItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: `${theme.border}66`,
+  },
+  battleLeft: { flex: 1 },
+  battleTime: { color: theme.textSecondary, fontSize: 11, fontWeight: '300' },
+  battleParticipants: { color: theme.textDim, fontSize: 9, fontWeight: '300', marginTop: 2 },
+  battleRight: { alignItems: 'flex-end' },
+  battleKills: { color: theme.error, fontSize: 12, fontWeight: '400', letterSpacing: 0.5 },
+  battleValue: { color: theme.route, fontSize: 10, fontWeight: '300', marginTop: 2 },
   // Sov styles
   sovCard: {
     backgroundColor: theme.surface,
@@ -815,6 +911,14 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   tradeHubDistance: { color: theme.route, fontSize: 13, fontWeight: '400', letterSpacing: 0.5 },
+  tierBadge: {
+    borderWidth: 1,
+    borderRadius: 2,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    marginLeft: 6,
+  },
+  tierText: { fontSize: 8, fontWeight: '500', letterSpacing: 0.5 },
   routeToHubButton: {
     backgroundColor: theme.accent,
     paddingVertical: 10,

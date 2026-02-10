@@ -57,6 +57,14 @@ export default function RootLayout() {
             }}
           />
           <Stack.Screen
+            name="landmark"
+            options={{
+              title: 'ランドマーク',
+              presentation: 'modal',
+              headerStyle: { backgroundColor: theme.surface },
+            }}
+          />
+          <Stack.Screen
             name="system/[id]"
             options={{
               title: 'システム情報',

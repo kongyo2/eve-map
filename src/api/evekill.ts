@@ -1,9 +1,10 @@
 import { Result, ok, err } from 'neverthrow';
 import type { ApiError } from './client';
-import type { Killmail } from '../types/universe';
-import { EveKillKillmailSchema } from './schemas';
+import type { Killmail, Battle } from '../types/universe';
+import { EveKillKillmailSchema, EveKillBattleSchema } from './schemas';
 
 const EVE_KILL_BASE = 'https://eve-kill.com/api/killlist/system';
+const EVE_KILL_BATTLE_BASE = 'https://eve-kill.com/api/battles/system';
 
 export const fetchRecentKills = async (
   systemId: number,
@@ -61,4 +62,56 @@ export const fetchRecentKills = async (
   }
 
   return ok(killmails);
+};
+
+export const fetchSystemBattles = async (
+  systemId: number,
+): Promise<Result<readonly Battle[], ApiError>> => {
+  const response = await fetch(`${EVE_KILL_BATTLE_BASE}/${systemId}`, {
+    headers: { Accept: 'application/json' },
+  }).catch((): null => null);
+
+  if (!response) {
+    return ok([]); // Network failure → graceful empty
+  }
+
+  if (!response.ok) {
+    return ok([]); // API error (503/404 etc.) → graceful empty
+  }
+
+  let data: unknown;
+  try {
+    data = await response.json();
+  } catch {
+    return ok([]);
+  }
+
+  // Response may be paginated object with battles array, or direct array
+  const rawBattles = Array.isArray(data)
+    ? data
+    : typeof data === 'object' && data !== null && 'battles' in data
+      ? (data as { battles: unknown[] }).battles
+      : [];
+
+  if (!Array.isArray(rawBattles)) return ok([]);
+
+  const battles: Battle[] = [];
+  for (const item of rawBattles) {
+    const parsed = EveKillBattleSchema.safeParse(item);
+    if (!parsed.success) continue;
+    const b = parsed.data;
+    battles.push({
+      battleId: b.battle_id,
+      systemId: b.system_id,
+      systemName: b.system_name,
+      regionName: b.region_name,
+      startTime: b.start_time,
+      endTime: b.end_time,
+      totalKills: b.total_kills,
+      totalValue: b.total_value,
+      participants: b.participants,
+    });
+  }
+
+  return ok(battles);
 };

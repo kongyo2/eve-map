@@ -117,3 +117,25 @@ export type MarketItemInfo = {
   readonly name: string;
   readonly stats: MarketStats | null;
 };
+
+export type Landmark = {
+  readonly id: number;
+  readonly name: string;
+  readonly description: string;
+  readonly position: Position3D;
+  readonly nearestSystemId?: number;
+};
+
+export type Battle = {
+  readonly battleId?: string;
+  readonly systemId: number;
+  readonly systemName: string;
+  readonly regionName: string;
+  readonly startTime: string;
+  readonly endTime?: string;
+  readonly totalKills: number;
+  readonly totalValue: number;
+  readonly participants?: number;
+};
+
+export type TradeHubTier = 'primary' | 'secondary';

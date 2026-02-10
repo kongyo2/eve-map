@@ -148,3 +148,27 @@ export type EsiSovSystemResponse = z.infer<typeof EsiSovSystemSchema>;
 export type EveKillKillmailResponse = z.infer<typeof EveKillKillmailSchema>;
 export type EveTycoonMarketStatsResponse = z.infer<typeof EveTycoonMarketStatsSchema>;
 export type EveTycoonMarketHistoryEntry = z.infer<typeof EveTycoonMarketHistoryEntrySchema>;
+
+// SDE API schemas (sde.jita.space)
+export const SdeLandmarkSchema = z.object({
+  landmarkID: z.number(),
+  name: z.record(z.string(), z.string()),
+  description: z.record(z.string(), z.string()).optional(),
+  position: z.object({ x: z.number(), y: z.number(), z: z.number() }),
+  iconID: z.number().optional(),
+});
+
+export type SdeLandmarkResponse = z.infer<typeof SdeLandmarkSchema>;
+
+// EVE-KILL Battle schema
+export const EveKillBattleSchema = z.object({
+  battle_id: z.string().optional(),
+  system_id: z.number(),
+  system_name: z.string(),
+  region_name: z.string(),
+  start_time: z.string(),
+  end_time: z.string().optional(),
+  total_kills: z.number(),
+  total_value: z.number(),
+  participants: z.number().optional(),
+});
