@@ -22,7 +22,8 @@
         "backgroundColor": "#0a0e1a"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.evemap.app"
+      "package": "com.evemap.app",
+      "versionCode": 2
     },
     "web": {
       "favicon": "./assets/favicon.png"

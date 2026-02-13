@@ -76,6 +76,10 @@ EVE coordinates (~10^17 range) are normalized by dividing by 1e16. Systems store
 
 Base URL: `https://esi.evetech.net/latest`. Always pass `datasource=tranquility` and `language=ja`. K-space regions are IDs 10000001–10000070. Rate limit: 20 req/s unauthenticated; the batch fetcher uses 20 concurrency with 50–100ms delays.
 
+### Versioning
+
+`app.json` の `version`（表示用）と `android.versionCode`（Play Store 用内部ビルド番号）は両方更新すること。`versionCode` は整数で、リリースごとに必ずインクリメントする。
+
 ## Japanese UI
 
 All user-facing strings are centralized in `src/constants/strings.ts`. Security classifications: ハイセク/ローセク/ヌルセク. System/region/constellation names come from ESI with `language=ja`.
