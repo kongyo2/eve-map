@@ -79,6 +79,7 @@ export default function LandmarkScreen() {
   const [landmarks, setLandmarks] = useState<readonly Landmark[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     setLoading(true);
@@ -130,15 +131,28 @@ export default function LandmarkScreen() {
     [router],
   );
 
+  const toggleExpand = useCallback((landmarkId: number) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(landmarkId)) {
+        next.delete(landmarkId);
+      } else {
+        next.add(landmarkId);
+      }
+      return next;
+    });
+  }, []);
+
   const renderItem = useCallback(
     ({ item }: { item: LandmarkWithDistance }) => {
       const sys = item.nearestSystem;
       const secColor = sys ? securityColor(sys.securityStatus) : theme.textDim;
+      const isExpanded = expandedIds.has(item.id);
 
       return (
         <TouchableOpacity
           style={styles.resultItem}
-          onPress={() => sys && handleViewDetails(sys.id)}
+          onPress={() => toggleExpand(item.id)}
           activeOpacity={0.6}
         >
           <View style={styles.resultLeft}>
@@ -158,16 +172,30 @@ export default function LandmarkScreen() {
                 </Text>
               )}
               {item.description.length > 0 && (
-                <Text style={styles.resultDescription} numberOfLines={2}>
+                <Text
+                  style={styles.resultDescription}
+                  numberOfLines={isExpanded ? undefined : 2}
+                >
                   {item.description}
                 </Text>
+              )}
+              {isExpanded && sys && (
+                <TouchableOpacity
+                  style={styles.viewSystemButton}
+                  onPress={() => handleViewDetails(sys.id)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.viewSystemButtonText}>
+                    {STRINGS.landmarkViewSystem}
+                  </Text>
+                </TouchableOpacity>
               )}
             </View>
           </View>
         </TouchableOpacity>
       );
     },
-    [handleViewDetails],
+    [handleViewDetails, toggleExpand, expandedIds],
   );
 
   return (
@@ -335,6 +363,21 @@ const styles = StyleSheet.create({
     fontWeight: '300',
     marginTop: 4,
     lineHeight: 14,
+  },
+  viewSystemButton: {
+    marginTop: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: theme.accent,
+    alignSelf: 'flex-start',
+  },
+  viewSystemButtonText: {
+    color: theme.accent,
+    fontSize: 11,
+    fontWeight: '400',
+    letterSpacing: 0.5,
   },
   emptyText: {
     color: theme.textDim,

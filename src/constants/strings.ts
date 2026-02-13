@@ -162,6 +162,7 @@ export const STRINGS = {
   noLandmarks: 'ランドマークが見つかりません',
   landmarkNearSystem: '最寄りシステム',
   landmarkLoading: 'ランドマークを読み込み中...',
+  landmarkViewSystem: 'システム詳細を見る',
 
   // Route comparison
   compareRoutes: 'ルート比較',
